@@ -1,0 +1,15 @@
+# Lo que genera Maven
+target/
+dependency-reduced-pom.xml
+*.class
+
+# La base de datos local
+*.db
+
+# Lo que genera la extensión de Java de VS Code
+.classpath
+.project
+.settings/
+.factorypath
+
+.vscode/
