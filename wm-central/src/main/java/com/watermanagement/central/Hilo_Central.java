@@ -13,8 +13,10 @@ public class Hilo_Central extends Thread{
     DatabaseManager dbmg;
     Map<String, Estacion> registro;
 
-    public Hilo_Central(Socket socket_cliente){
+    public Hilo_Central(Socket socket_cliente, DatabaseManager dbmg, Map<String, Estacion> registro){
         this.socket_cliente = socket_cliente;
+        this.dbmg = dbmg;
+        this.registro = registro;
     }
 
     public static void escribeSocket(Socket socket, String cadena){
