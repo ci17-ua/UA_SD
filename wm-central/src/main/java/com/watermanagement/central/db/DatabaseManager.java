@@ -17,54 +17,60 @@ public class DatabaseManager{
         return DriverManager.getConnection(url);
     }
 
-    public void crearTabla() throws SQLException{
-        String sql = "CREATE TABLE IF NOT EXISTS estaciones_riego (" +
-                    "id TEXT PRIMARY KEY" + 
-                    "ubicacin TEXT NOT NULL" + 
-                    "estado TEXT NOT NULL";
+    public void crearTablas() throws SQLException{
+        String querry_est = "CREATE TABLE IF NOT EXISTS estaciones(" +
+                            "id TEXT PRIMARY KEY," + 
+                            "ubicacion TEXT NOT NULL," + 
+                            "estado TEXT NOT NULL) STRICT;";
+        String querry_op = " CREATE TABLE IF NOT EXISTS operarios(" +
+                            "id TEXT PRIMARY KEY) STRICT;";
+
         try (Connection conn = conectar(); 
-        PreparedStatement ps = conn.prepareStatement(sql)){
+        PreparedStatement ps = conn.prepareStatement(querry_est);
+        PreparedStatement ps2 = conn.prepareStatement(querry_op)){
             ps.executeUpdate();
+            ps2.executeUpdate();
         }
     }
 
-    public void insertar(Estacion estacion) throws SQLException{
-        String sql = "INSERT INTO estaciones_riego (id) VALUES (?)";
+    public void insertarEstacion(Estacion estacion) throws SQLException{
+        String querry = "INSERT INTO estaciones (id, ubicacion, estado) VALUES (?, ?, ?)";
         try(Connection conn = conectar(); 
-            PreparedStatement ps = conn.prepareStatement(sql)){
+            PreparedStatement ps = conn.prepareStatement(querry)){
                 ps.setString(1, estacion.idEstacion);
                 ps.setString(2, estacion.ubicacion);
-                ps.setString(3, estacion.estado.name());
+                ps.setString(3, EstadoWS.DESCONECTADA.name());
                 ps.executeUpdate();
             }
     }
 
-    public void listarTodos() throws SQLException{
-        String sql = "SELECT * FROM estaciones_riego";
-        try(Connection conn =  conectar();
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery()){
-                while(rs.next()){
-                    System.out.println(rs.getString("id"));
-                }
+    public void actualizarEstado(String id, EstadoWS estado) throws SQLException{
+        String querry = "UPDATE estaciones SET estado = ? WHERE id = ?";
+        try(Connection conn = conectar();
+            PreparedStatement ps = conn.prepareStatement(querry)){
+                ps.setString(1, estado.name());
+                ps.setString(2, id);
+                ps.executeUpdate();
             }
     }
 
-    public List<Estacion> cargarEstaciones(){
+    public List<Estacion> cargarEstaciones() throws SQLException{
     
         List<Estacion> lista = new ArrayList<>();
-        String sql = "SELECT * FORM estaciones_riego";
+        String querry = "SELECT * FROM estaciones";
         try(Connection conn = conectar();
-            PreparedStatement ps = conn.prepareStatement(sql);
+            PreparedStatement ps = conn.prepareStatement(querry);
             ResultSet rs = ps.executeQuery()){
+                
                 while(rs.next()){
-                    Estado estado = Estado.valueOf(rs.getString("estado"));
-                    Estacion e = new Estacion(rs.getString("id"), rs.getString("ubicacion"), estado);
+                    Estacion e = new Estacion(rs.getString("id"), rs.getString("ubicacion"), false, EstadoWS.valueOf(rs.getString("estado")));
+                    if(e.estado == EstadoWS.FUERA_DE_SERVICIO){
+                        e.bloqueada = true;
+                    }
+                    e.estado = EstadoWS.DESCONECTADA;
                     lista.add(e);
                 }
-        }catch(Exception e){
-            System.err.println("Error: " + e.toString());
-        }
+            }    
         return lista;
     }
 }

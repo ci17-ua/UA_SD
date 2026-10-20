@@ -5,83 +5,95 @@ import java.net.*;
 
 public class WM_WS_M{
 
-    public static void validacionArgumentos(String args[], BufferedReader buffer, String argumentos[]){
-
-        if(args.length != 4){
-            try{
-                System.out.println("Introduce el puerto por el que se escucha al motor: ");
-                argumentos[0] = buffer.readLine();
-                System.out.println("Introduce la direccion del Sistema Central: ");
-                argumentos[1] = buffer.readLine();
-                System.out.println("Introduce el puerto por el que te escucha el Sistema Central: ");
-                argumentos[2] = buffer.readLine();
-                System.out.println("Introduce el identificador de la estacion: ");
-                argumentos[3] = buffer.readLine();
-            }catch(Exception e){
-                System.err.println("Error: " + e.toString());
-            }
-        }else{
-            argumentos[0]=args[0];
-            argumentos[1]=args[1];
-            argumentos[2]=args[2];
-            argumentos[3]=args[3];
-        }
+    public static void escribeSocket (Socket socket, String cadena) throws IOException{
+        
+        OutputStream stream = socket.getOutputStream();
+        DataOutputStream data = new DataOutputStream(stream);
+        data.writeUTF(cadena);
     }
 
-    public static void escribeSocket(Socket socket, String cadena){
-        try{
-            OutputStream stream = socket.getOutputStream();
-            DataOutputStream data = new DataOutputStream(stream);
-            data.writeUTF(cadena);
-        }catch(Exception e){
-            System.err.println("Error: " + e.toString());
-        }
-        return;
-    }
-
-    public static String leeSocket(Socket socket){
+    public static String leeSocket(Socket socket) throws IOException{
         String cadena = "";
-
-        try{
-            InputStream stream = socket.getInputStream();
-            DataInputStream data = new DataInputStream(stream);
-            cadena = data.readUTF();
-
-        }catch(Exception e){
-            System.err.println("Error: " + e.toString());
-        }
+    
+        InputStream stream = socket.getInputStream();
+        DataInputStream data = new DataInputStream(stream);
+        cadena = data.readUTF();
 
         return cadena;
     }
 
     public static void main(String args[]){
 
-        InputStreamReader reader = new InputStreamReader(System.in);
-        BufferedReader buffer = new BufferedReader(reader);
+        if(args.length < 4 || args.length > 5){
+            System.err.println("ARGUMENTOS INCORRECTOS!!");
+            System.err.println("USO: /puerto_escucha_motor /IP_central /puerto_escucha_central /ID_estacion /ubicacion(necesario para registrar la estacion y entre comillas)");
+            System.exit(1);
+        }
 
-        String[] argumentos = new String[4];
+        System.out.println(("El monitor escucha al motor por el puerto: " + args[0]));
+        System.out.println("El sistema central se encuentra en: " + args[1] + ":" + args[2]);
+        System.out.println("El identificador de la estacion es: " + args[3]);
 
-        validacionArgumentos(args, buffer, argumentos);
-
-        System.out.println(("El monitor escucha al motor por el puerto: " + argumentos[0]));
-        System.out.println("El sistema central se encuentra en: " + argumentos[1] + ":" + argumentos[2]);
-        System.out.println("El identificador de la estacion es: " + argumentos[3]);
-
-        WM_WS_M monitor = new WM_WS_M();
-
-        String host = argumentos[1];
-        String puerto = argumentos[2];
+        Socket socket_cliente_central;
 
         try{
-            Socket socket_cliente_central = new Socket(host, Integer.parseInt(puerto));
-
-            System.out.println("Me acabo de conectar a la central, le voy a mandar un saludo y me desconecto.");
-            escribeSocket(socket_cliente_central, "Hola soy: " + argumentos[3]);
+            socket_cliente_central = new Socket(args[1], Integer.parseInt(args[2]));
             
-            socket_cliente_central.close();
+        }catch(UnknownHostException e){
+            System.err.println("EL NOMBRE DEL HOST NO EXISTE!!");
+            System.err.println("Error: " + e.toString());
+            System.exit(1);
+            return;
+        }catch(Exception e){
+            System.err.println("CENTRAL APAGADA O PUERTO EQUIVOCADO!!");
+            System.err.println("Error: " + e.toString());
+            System.exit(1);
+            return;
+        }
+
+        String cadena;
+        String[] split;
+        try{
+            //MENSAJE DE IDENTIFICACION (TEMPORAL)
+            escribeSocket(socket_cliente_central, args[3]);
+
+            //AUTENTICACION
+            if(args.length == 4){
+                escribeSocket(socket_cliente_central, "AUTENTICAR#" + args[3]);
+                cadena = leeSocket(socket_cliente_central);
+                if(cadena.equals("OK") && !cadena.contains("#")){
+                    System.out.println("AUTENTICACION CORRECTA!!");
+                }
+                else{
+                    split = cadena.split("#");
+                    System.out.println("ERROR EN LA AUTENTICACION POR: " + split[1]);
+                    socket_cliente_central.close();
+                    System.exit(1);
+                }
+            }  
+            //ALTA
+            else{
+                escribeSocket(socket_cliente_central, "ALTA#" + args[3] + "#" + args[4]);
+                cadena = leeSocket(socket_cliente_central);
+                if(cadena.equals("OK") && !cadena.contains("#")){
+                    System.out.println("ALTA CORRECTA!!");
+                }
+                else{
+                    split = cadena.split("#");
+                    System.out.println("ERROR EN EL ALTA POR: " + split[1]);
+                    socket_cliente_central.close();
+                    System.exit(1);
+                }
+            }
+
+            
+            
         }catch(Exception e){
             System.err.println("Error: " + e.toString());
         }
+
+        while(true);
+
     }
 
 }

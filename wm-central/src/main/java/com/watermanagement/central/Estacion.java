@@ -2,28 +2,16 @@ package com.watermanagement.central;
 
 public class Estacion {
     
-    public String idEstacion;
-    public String ubicacion;
-    public Estado estado;
-    public float caudal;
-    public float volumen;
-    public String idOperario;
+    public final String idEstacion;
+    public final String ubicacion;
+    public EstadoWS estado;
+    public boolean bloqueada;
+    public Riego riegoActual;
 
-    public Estacion(String idEstacion, String ubicacion, Estado estado, float caudal, float volumen, String idOperario){
+    public Estacion(String idEstacion, String ubicacion, boolean bloqueada, EstadoWS estado){
         this.idEstacion = idEstacion;
         this.ubicacion = ubicacion;
+        this.bloqueada = bloqueada;
         this.estado = estado;
-        this.caudal = caudal;
-        this.volumen = volumen;
-        this.idOperario = idOperario;
-    }
-
-    public Estacion(String idEstacion, String ubicacion, Estado estado){
-        this.idEstacion = idEstacion;
-        this.ubicacion = ubicacion;
-        this.estado = estado;
-        this.caudal = 0;
-        this.volumen = 0;
-        this.idOperario = "";
     }
 }
