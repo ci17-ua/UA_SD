@@ -39,7 +39,7 @@ public class DatabaseManager{
             PreparedStatement ps = conn.prepareStatement(querry)){
                 ps.setString(1, estacion.idEstacion);
                 ps.setString(2, estacion.ubicacion);
-                ps.setString(3, EstadoWS.DESCONECTADA.name());
+                ps.setString(3, EstadoWS.DISPONIBLE.name());
                 ps.executeUpdate();
             }
     }
