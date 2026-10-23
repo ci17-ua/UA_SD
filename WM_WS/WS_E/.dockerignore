@@ -1,0 +1,4 @@
+# Lo que no se manda a Docker al construir la imagen
+target/
+dependency-reduced-pom.xml
+riego-*.txt
