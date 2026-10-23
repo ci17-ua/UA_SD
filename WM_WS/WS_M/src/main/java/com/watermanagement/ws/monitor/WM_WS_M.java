@@ -6,7 +6,7 @@ import java.net.*;
 public class WM_WS_M{
 
     //ESTADO DEL MOTOR: TRUE SI ESTA CONECTADO Y SU ULTIMA RESPUESTA A SALUD FUE OK
-    //LO ACTUALIZARA EL HILO DEL MOTOR (SIGUIENTE PASO) Y LO LEE EL BUCLE DE VIDA
+    //LO ACTUALIZA Hilo_Motor Y LO LEE EL BUCLE DE VIDA
     //ES volatile PORQUE LO ESCRIBE UN HILO Y LO LEE OTRO
     //MIENTRAS NO HAYA MOTOR ES FALSE: SE ENVIA VIDA CON KO Y CENTRAL VE LA ESTACION AVERIADA (ROJO), COMO PIDE LA GUIA
     public static volatile boolean engine_ok = false;
@@ -61,8 +61,10 @@ public class WM_WS_M{
         System.out.println("El identificador de la estacion es: " + args[3]);
 
         //--------------------------------------------------------------------------------------------------------------------------------
-        //HILO DEL MOTOR (SIGUIENTE PASO): SE LANZA UNA SOLA VEZ, AQUI, ANTES DEL BUCLE DE CONEXION CON CENTRAL
-        //ServerSocket EN puerto_motor, accept(), ENVIAR ID#ID_ESTACION Y BUCLE DE SALUD QUE ACTUALIZA engine_ok
+        //HILO DEL MOTOR: SE LANZA UNA SOLA VEZ, AQUI, ANTES DEL BUCLE DE CONEXION CON CENTRAL
+        //ASI EL MOTOR SE PUEDE CONECTAR AUNQUE CENTRAL NO ESTE, Y AL RECONECTAR CON CENTRAL NO SE VUELVE A ABRIR EL PUERTO
+        Thread hilo_motor = new Hilo_Motor(puerto_motor, args[3]);
+        hilo_motor.start();
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //CONEXION CON CENTRAL

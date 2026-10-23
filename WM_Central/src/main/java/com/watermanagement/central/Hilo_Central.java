@@ -50,7 +50,7 @@ public class Hilo_Central extends Thread{
 
             cadena = leeSocket(socket_cliente);
             split = cadena.split("#");
-
+            
             switch(split[0]){
                 case "ALTA":
                     //ALTA Y DESPUES AUTENTICACION
