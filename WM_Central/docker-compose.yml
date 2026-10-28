@@ -1,0 +1,85 @@
+# =========================================================
+# PARTE CLOUD (INSTANCIA EC2 DE AWS): KAFKA + WM_CENTRAL (CON SU BBDD SQLITE EN UN VOLUMEN)
+# Se lanza desde esta carpeta (WM_Central), igual en la instancia que en tu PC:
+#   docker compose up -d --build
+# Para usar el menu de Central:
+#   docker attach central        (salir sin pararlo: Ctrl+P y despues Ctrl+Q)
+# La direccion por la que los PCs del laboratorio llegan a Kafka va en el fichero .env
+# =========================================================
+
+services:
+
+  # ---------- KAFKA ----------
+  # Imagen oficial, misma version que kafka-clients. Un solo nodo en modo KRaft (sin ZooKeeper).
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"                 # EXTERNO: para los Engines y FO de otros PCs
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Dos puertas de entrada: INTERNO para los contenedores de este compose (Central)
+      # y EXTERNO para todo lo demas. CONTROLLER es interno de Kafka.
+      KAFKA_LISTENERS: INTERNO://:9093,EXTERNO://:9092,CONTROLLER://localhost:9094
+      # Lo que Kafka le dice a cada cliente que use a partir de la primera conexion
+      KAFKA_ADVERTISED_LISTENERS: INTERNO://kafka:9093,EXTERNO://${KAFKA_HOST_PUBLICO:?Falta KAFKA_HOST_PUBLICO en el fichero .env}:${KAFKA_PUERTO_PUBLICO:-9092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNO:PLAINTEXT,EXTERNO:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNO
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9094
+      # Con un solo nodo, los topics internos de Kafka solo pueden tener 1 copia
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+      # Asigna particiones a los consumidores sin esperar 3 s (el Engine responde KO a SALUD hasta tenerlas)
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Los mensajes y lo que lleva leido cada grupo, en un volumen: sobreviven a recrear el contenedor
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-datos:/var/lib/kafka/data
+
+  # ---------- CREACION DE LOS TOPICS ----------
+  # Contenedor de un solo uso: espera a que Kafka responda, crea los 5 topics si no existen y termina.
+  kafka-topics:
+    image: apache/kafka:4.3.1
+    container_name: kafka-topics
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --list > /dev/null 2>&1; do
+          echo "Esperando a Kafka..."
+          sleep 2
+        done
+        for topic in peticiones-riego respuestas-fo ordenes-ws telemetria-ws estado-estaciones; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --create --if-not-exists --topic $$topic --partitions 1 --replication-factor 1
+        done
+        echo "Topics creados:"
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --list
+
+  # ---------- WM_CENTRAL ----------
+  central:
+    build: .
+    image: wm-central
+    container_name: central
+    # Si la instancia de AWS se para (para no gastar creditos) y se vuelve a arrancar,
+    # Docker relanza Central y Kafka solos. Un docker stop o docker kill manual no lo relanza.
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "9090:9090"                 # Monitors de los PCs del laboratorio
+    # puerto_escucha_monitor IP_kafka puerto_kafka (Central esta en este compose: entra por INTERNO)
+    command: ["9090", "kafka", "9093"]
+    volumes:
+      - central-datos:/data         # WM_DB_PATH=/data/watermanagement.db (lo fija el Dockerfile)
+    stdin_open: true                # Central tiene menu: hace falta para docker attach
+    tty: true
+
+volumes:
+  kafka-datos:
+  central-datos:
