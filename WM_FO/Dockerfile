@@ -36,7 +36,7 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-COPY --from=builder /build/target/wm-fo-1.0-SNAPSHOT.jar wm-fo.jar
+COPY --from=builder /build/target/WM_FO-1.0-SNAPSHOT.jar WM_FO.jar
 
 # No hay VOLUME: el FO no guarda nada (lo que lleva leido lo recuerda Kafka
 # con el grupo fo-<ID_operario>). El fichero de peticiones es del PC y se

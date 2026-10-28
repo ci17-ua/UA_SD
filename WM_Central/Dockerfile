@@ -33,7 +33,7 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-COPY --from=builder /build/target/wm-central-1.0-SNAPSHOT.jar wm-central.jar
+COPY --from=builder /build/target/WM_Central-1.0-SNAPSHOT.jar WM_Central.jar
 
 # La BBDD va en /data, que es un volumen: asi sobrevive aunque se borre
 # y se vuelva a crear el contenedor (Central recupera las estaciones).

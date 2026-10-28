@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.watermanagement</groupId>
-    <artifactId>wm-ws-monitor</artifactId>
+    <artifactId>WS_M</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 

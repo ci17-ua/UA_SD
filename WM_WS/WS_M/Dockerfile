@@ -32,7 +32,7 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-COPY --from=builder /build/target/wm-ws-monitor-1.0-SNAPSHOT.jar wm-ws-monitor.jar
+COPY --from=builder /build/target/WS_M-1.0-SNAPSHOT.jar WS_M.jar
 
 # Puerto donde el Monitor espera al Engine (informativo: se publica con -p).
 EXPOSE 5000

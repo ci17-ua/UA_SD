@@ -33,7 +33,7 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-COPY --from=builder /build/target/wm-ws-engine-1.0-SNAPSHOT.jar wm-ws-engine.jar
+COPY --from=builder /build/target/WS_E-1.0-SNAPSHOT.jar WS_E.jar
 
 # El fichero riego-<ID_estacion>.txt (el riego a medias, para no perderlo
 # si el Engine se cae) va en /data, que es un volumen: asi sobrevive aunque
