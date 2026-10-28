@@ -54,6 +54,18 @@ public class DatabaseManager{
             }
     }
 
+    //DA DE ALTA AL OPERARIO SI NO EXISTIA (INSERT OR IGNORE: SI YA ESTA, NO HACE NADA)
+    //true: es un operario nuevo
+    //false: ya estaba dado de alta
+    public boolean registrarOperario(String id) throws SQLException{
+        String querry = "INSERT OR IGNORE INTO operarios (id) VALUES (?)";
+        try(Connection conn = conectar();
+            PreparedStatement ps = conn.prepareStatement(querry)){
+                ps.setString(1, id);
+                return ps.executeUpdate() > 0;
+            }
+    }
+
     public List<Estacion> cargarEstaciones() throws SQLException{
     
         List<Estacion> lista = new ArrayList<>();

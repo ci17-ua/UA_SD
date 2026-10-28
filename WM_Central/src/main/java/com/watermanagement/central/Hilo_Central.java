@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 import com.watermanagement.central.db.DatabaseManager;
+import com.watermanagement.central.kafka.ProductorKafka;
 
 import java.io.*;
 
@@ -13,12 +14,14 @@ public class Hilo_Central extends Thread{
     public Socket socket_cliente;
     public DatabaseManager dbmg;
     public Map<String, Estacion> registro;
+    public ProductorKafka productor; //PARA ENVIAR PARAR Y BLOQUEAR AL ENGINE Y PASO AL OPERARIO
     public Estacion estacion; //ESTACION QUE HA CONECTADO ESTE HILO (NULL HASTA QUE SE AUTENTICA)
 
-    public Hilo_Central(Socket socket_cliente, DatabaseManager dbmg, Map<String, Estacion> registro){
+    public Hilo_Central(Socket socket_cliente, DatabaseManager dbmg, Map<String, Estacion> registro, ProductorKafka productor){
         this.socket_cliente = socket_cliente;
         this.dbmg = dbmg;
         this.registro = registro;
+        this.productor = productor;
         this.estacion = null;
     }
 
@@ -50,7 +53,7 @@ public class Hilo_Central extends Thread{
 
             cadena = leeSocket(socket_cliente);
             split = cadena.split("#");
-            
+
             switch(split[0]){
                 case "ALTA":
                     //ALTA Y DESPUES AUTENTICACION
@@ -91,6 +94,13 @@ public class Hilo_Central extends Thread{
             if(estacion != null){
                 estacion.desconectar();
                 System.out.println("LA ESTACION " + estacion.idEstacion + " SE HA DESCONECTADO");
+
+                //SI ESTABA REGANDO, SE AVISA AL OPERARIO. EL ENGINE, SIN MONITOR, PARA SOLO Y ENVIA SU FIN (Y CON EL, EL RESUMEN)
+                Riego riego = estacion.getRiego();
+                if(riego != null){
+                    Hilo_Kafka_Central.avisar(productor, "PASO", riego.idPeticion, riego.idOperario,
+                                              "SE HA PERDIDO LA CONEXION CON LA ESTACION " + estacion.idEstacion);
+                }
             }
             try{
                 socket_cliente.close();
@@ -168,10 +178,13 @@ public class Hilo_Central extends Thread{
         estacion = e;
         guardarEstado();
 
-        //PENDIENTE (KAFKA): SI e.bloqueada, REENVIAR BLOQUEAR#ID AL ENGINE POR ordenes-ws
-
         System.out.println("AUTENTICACION CORRECTA DE " + split[1] + ": " + e.getEstado());
         escribeSocket(socket_cliente, "OK");
+
+        //UN ENGINE REINICIADO NO RECUERDA QUE ESTABA BLOQUEADO (NO LEE LAS ORDENES ANTIGUAS): SE LE VUELVE A DECIR
+        if(e.estaBloqueada()){
+            reenviarBloqueo();
+        }
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -181,6 +194,7 @@ public class Hilo_Central extends Thread{
     public void vida() throws IOException{
         String cadena;
         String[] split;
+        Riego riego;
 
         while(true){
             cadena = leeSocket(socket_cliente);
@@ -199,7 +213,16 @@ public class Hilo_Central extends Thread{
                     if(estacion.marcarFuga()){
                         System.out.println("LA ESTACION " + estacion.idEstacion + " TIENE UNA FUGA O UNA AVERIA!!");
                         guardarEstado();
-                        //PENDIENTE (KAFKA): SI ESTABA REGANDO, ENVIAR PARAR#ID#FUGA AL ENGINE Y UN PASO AL OPERARIO
+
+                        //SI ESTABA REGANDO, SE PARA EL RIEGO Y SE AVISA AL OPERARIO
+                        //(SI EL ENGINE ESTA VIVO, PARA Y ENVIA FIN; SI ESTA CAIDO, ENVIARA EL FIN AL VOLVER)
+                        riego = estacion.getRiego();
+                        if(riego != null){
+                            productor.enviar("ordenes-ws", estacion.idEstacion, "PARAR#" + estacion.idEstacion + "#FUGA");
+                            System.out.println("ORDEN PARAR ENVIADA A " + estacion.idEstacion);
+                            Hilo_Kafka_Central.avisar(productor, "PASO", riego.idPeticion, riego.idOperario,
+                                                      "LA ESTACION " + estacion.idEstacion + " TIENE UNA FUGA O UNA AVERIA: SE PARA EL RIEGO");
+                        }
                     }
                 break;
 
@@ -208,7 +231,11 @@ public class Hilo_Central extends Thread{
                     if(estacion.fugaResuelta()){
                         System.out.println("LA ESTACION " + estacion.idEstacion + " SE HA RECUPERADO: " + estacion.getEstado());
                         guardarEstado();
-                        //PENDIENTE (KAFKA): SI estacion.bloqueada, REENVIAR BLOQUEAR#ID AL ENGINE POR ordenes-ws
+
+                        //EL ENGINE PUEDE HABERSE REINICIADO: SI ESTA BLOQUEADA, SE LE VUELVE A DECIR
+                        if(estacion.estaBloqueada()){
+                            reenviarBloqueo();
+                        }
                     }
                 break;
 
@@ -219,6 +246,14 @@ public class Hilo_Central extends Thread{
             }
 
             escribeSocket(socket_cliente, "OK");
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------------
+    //BLOQUEAR#ID AL ENGINE DE ESTA ESTACION
+    public void reenviarBloqueo(){
+        if(productor.enviar("ordenes-ws", estacion.idEstacion, "BLOQUEAR#" + estacion.idEstacion)){
+            System.out.println("ORDEN BLOQUEAR REENVIADA A " + estacion.idEstacion + " (SIGUE FUERA DE SERVICIO)");
         }
     }
 

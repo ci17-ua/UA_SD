@@ -112,7 +112,8 @@ public class Hilo_Monitor extends Thread{
             if(!WM_WS_E.sin_monitor){
                 WM_WS_E.sin_monitor = true;
                 System.out.println("ESTACION AVERIADA: SIN MONITOR NO SE PUEDE REGAR");
-                //PENDIENTE (KAFKA): SI ESTA REGANDO, CERRAR LA VALVULA Y ENVIAR FIN CON MOTIVO SIN_MONITOR
+                //SI ESTA REGANDO, SE CIERRA LA VALVULA Y SE ENVIA EL FIN CON MOTIVO SIN_MONITOR
+                WM_WS_E.monitorCaido();
             }
 
             //ESPERAR 3 SEGUNDOS ANTES DE REINTENTAR
