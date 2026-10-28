@@ -45,8 +45,8 @@ EXPOSE 9090
 
 # ENTRYPOINT lanza Central y CMD son los argumentos por defecto
 # (puerto_escucha_monitor IP_kafka puerto_kafka). Los argumentos de
-# "docker run wm-central ..." sustituyen a los de CMD.
+# "docker run WM_Central ..." sustituyen a los de CMD.
 # --enable-native-access evita el aviso de Java 25 al cargar la
 # libreria nativa de SQLite.
-ENTRYPOINT ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "wm-central.jar"]
+ENTRYPOINT ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "WM_Central.jar"]
 CMD ["9090", "kafka", "9092"]

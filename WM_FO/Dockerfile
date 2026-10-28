@@ -47,4 +47,4 @@ COPY --from=builder /build/target/WM_FO-1.0-SNAPSHOT.jar WM_FO.jar
 # los argumentos se ponen siempre en "docker run" o en el "command:" del compose:
 # IP_kafka puerto_kafka ID_operario [fichero_peticiones]
 # Sin argumentos, el FO los pide por teclado (hace falta -it).
-ENTRYPOINT ["java", "-jar", "wm-fo.jar"]
+ENTRYPOINT ["java", "-jar", "WM_FO.jar"]

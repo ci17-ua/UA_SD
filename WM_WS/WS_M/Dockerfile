@@ -42,4 +42,4 @@ EXPOSE 5000
 # o en el "command:" del compose. Sin argumentos, el Monitor muestra el
 # uso correcto y termina.
 # puerto_escucha_motor IP_central puerto_central ID_estacion [ubicacion]
-ENTRYPOINT ["java", "-jar", "wm-ws-monitor.jar"]
+ENTRYPOINT ["java", "-jar", "WS_M.jar"]

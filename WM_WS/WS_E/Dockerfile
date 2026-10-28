@@ -50,4 +50,4 @@ VOLUME ["/data"]
 # o en el "command:" del compose:
 # IP_kafka puerto_kafka IP_monitor puerto_monitor
 # Sin argumentos, el Engine los pide por teclado (por eso tambien -it).
-ENTRYPOINT ["java", "-jar", "wm-ws-engine.jar"]
+ENTRYPOINT ["java", "-jar", "WS_E.jar"]
