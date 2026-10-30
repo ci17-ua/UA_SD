@@ -88,6 +88,41 @@ public class Estacion {
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
+    //ORDENES DE CENTRAL (MENU Y PANEL WEB): BLOQUEAR Y ACTIVAR
+
+    //BLOQUEAR: LA ESTACION QUEDA FUERA DE SERVICIO
+    //SI ESTABA DISPONIBLE O REGANDO PASA A FUERA_DE_SERVICIO EN EL ACTO. EL RIEGO LO PARA EL ENGINE AL RECIBIR BLOQUEAR,
+    //Y SU FIN YA NO LA DEVUELVE A DISPONIBLE (terminarRiego SOLO CAMBIA EL ESTADO SI ESTABA REGANDO)
+    //SI ESTA EN FUGA O DESCONECTADA SE QUEDA COMO ESTA: PASA A FUERA_DE_SERVICIO AL RESOLVERSE LA FUGA O AL AUTENTICARSE
+    //true: se ha bloqueado
+    //false: ya estaba bloqueada
+    public synchronized boolean bloquear(){
+        if(bloqueada){
+            return false;
+        }
+        bloqueada = true;
+        if(estado == EstadoWS.DISPONIBLE || estado == EstadoWS.REGANDO){
+            estado = EstadoWS.FUERA_DE_SERVICIO;
+        }
+        return true;
+    }
+
+    //ACTIVAR: QUITA EL BLOQUEO. SI ESTABA FUERA_DE_SERVICIO VUELVE A DISPONIBLE
+    //SI ESTA EN FUGA O DESCONECTADA SE QUEDA COMO ESTA: PASA A DISPONIBLE AL RESOLVERSE LA FUGA O AL AUTENTICARSE
+    //true: se ha activado
+    //false: no estaba bloqueada
+    public synchronized boolean activar(){
+        if(!bloqueada){
+            return false;
+        }
+        bloqueada = false;
+        if(estado == EstadoWS.FUERA_DE_SERVICIO){
+            estado = EstadoWS.DISPONIBLE;
+        }
+        return true;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------------
     //RIEGOS. EL ESTADO DE RIEGO (REGANDO) LO DECIDE EL ENGINE: SOLO CAMBIA CON INICIADO, DATOS Y FIN
 
     //PETICION: RESERVA LA ESTACION PARA UN RIEGO SI ESTA LIBRE (DISPONIBLE Y SIN OTRO RIEGO)
