@@ -205,8 +205,8 @@ public class Hilo_Kafka_Central extends Thread{
             guardarEstado(e);
         }
 
-        //PENDIENTE (PANEL): EL PANEL MOSTRARA EL CAUDAL Y EL VOLUMEN. MIENTRAS TANTO SE ESCRIBEN AQUI
-        System.out.println("REGANDO " + split[1] + " (" + split[3] + "): " + split[4] + " L/MIN, " + split[5] + " LITROS");
+        //EL CAUDAL Y EL VOLUMEN NO SE ESCRIBEN EN LA TERMINAL (CON VARIAS ESTACIONES REGANDO LA LLENARIAN CADA SEGUNDO):
+        //LOS ENSEÑA EL PANEL WEB, QUE LOS LEE DEL RIEGO DE LA ESTACION
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -221,6 +221,11 @@ public class Hilo_Kafka_Central extends Thread{
         Estacion e = registro.get(split[1]);
         if(e != null && e.terminarRiego(split[2]) != null){
             guardarEstado(e);
+        }
+
+        //LOS LITROS DE ESTE RIEGO SE SUMAN AL TOTAL DE LA ESTACION (LO ENSEÑA EL PANEL)
+        if(e != null){
+            e.sumarLitros(Double.parseDouble(split[4]));
         }
 
         System.out.println("RIEGO TERMINADO EN " + split[1] + " (" + split[3] + "): " + split[4] + " LITROS EN " + split[5] + " SEGUNDOS (" + split[6] + ")");

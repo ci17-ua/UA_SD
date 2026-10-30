@@ -50,8 +50,6 @@ public class Hilo_Latido extends Thread{
                     }
                 }
 
-                //PENDIENTE (PANEL): SI EL PANEL ES DE CONSOLA, AQUI SE REPINTA CADA SEGUNDO
-
                 Thread.sleep(500);
             }catch(InterruptedException e){
                 return;

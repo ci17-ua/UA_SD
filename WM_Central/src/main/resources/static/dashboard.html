@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de Central de WaterManagement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* PANEL DE CENTRAL: UNA LINEA POR ESTACION, COMO EL EJEMPLO DE ESCRITORIO DEL ENUNCIADO.
+     LOS COLORES DEL ESTADO LOS FIJA EL ENUNCIADO: DISPONIBLE VERDE, REGANDO VERDE PARPADEANDO, FUGA ROJO,
+     FUERA DE SERVICIO NARANJA Y DESCONECTADA GRIS. EL RESTO DEL PANEL ES NEUTRO PARA QUE ESOS COLORES SEAN LO PRIMERO QUE SE VE */
+  :root{
+    --fondo:#EEF2EF;
+    --superficie:#FFFFFF;
+    --tinta:#123548;
+    --tenue:#56676A;
+    --linea:#D3DCD8;
+    --agua:#1F6FA8;
+    --seleccion:#E2EEF7;
+
+    --disponible:#2F8F46;
+    --regando:#2F8F46;
+    --regando-oscuro:#1C5C2C;
+    --fuga:#C0392B;
+    --fuera:#F08A0B;
+    --desconectada:#6F7B77;
+
+    --letra:"Barlow", system-ui, "Segoe UI", Roboto, sans-serif;
+    --letra-estrecha:"Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--fondo);
+    color:var(--tinta);
+    font-family:var(--letra);
+    font-size:16px;
+    line-height:1.45;
+  }
+  button,input,select{font:inherit;color:inherit}
+  :focus-visible{outline:3px solid var(--agua);outline-offset:2px}
+  h2{
+    margin:0;
+    font-family:var(--letra-estrecha);
+    font-weight:600;
+    font-size:22px;
+  }
+
+  /* ---------- CABECERA ---------- */
+  .cabecera{
+    background:var(--tinta);
+    color:#fff;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px 24px;
+    padding:14px 24px;
+  }
+  .marca{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .marca h1{
+    margin:0;
+    font-family:var(--letra-estrecha);
+    font-weight:700;
+    font-size:30px;
+    letter-spacing:.01em;
+  }
+  .marca p{margin:0;color:#B9CCD6}
+  .conexion{display:flex;align-items:center;gap:10px;font-size:15px;color:#DCE7EC}
+  .punto{width:11px;height:11px;border-radius:50%;background:#7CCB8A;flex:none}
+  .desconectado .punto{background:#FF7A6B}
+  .desconectado .conexion-texto{color:#FFD2CC;font-weight:600}
+
+  /* ---------- BARRA DE ORDENES (COMO LA BARRA DE HERRAMIENTAS DEL EJEMPLO) ---------- */
+  .ordenes{
+    margin:16px 24px 0;
+    background:var(--superficie);
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:12px 16px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    gap:10px 16px;
+  }
+  .campo label{display:block;font-size:13px;color:var(--tenue);margin:0 0 3px}
+  .campo select{min-width:230px}
+  .campo input{width:110px}
+  select,input[type=number]{
+    padding:7px 10px;
+    border:1px solid #9FB0AA;
+    border-radius:4px;
+    background:#fff;
+  }
+  .botones{display:flex;gap:8px;flex-wrap:wrap}
+  .boton{
+    border-radius:4px;
+    padding:7px 14px;
+    font-weight:600;
+    cursor:pointer;
+    border:1.5px solid var(--tinta);
+    background:#fff;
+  }
+  .boton:hover{background:#E4ECEA}
+  .boton-principal{background:var(--agua);border-color:var(--agua);color:#fff}
+  .boton-principal:hover{background:#185A89}
+  .boton:disabled{opacity:.5;cursor:wait}
+  .resultado{
+    margin:0;
+    flex:1 1 260px;
+    font-size:14px;
+    white-space:pre-wrap;
+    align-self:center;
+  }
+  .resultado.mal{color:var(--fuga);font-weight:600}
+
+  /* ---------- CUERPO: TABLA Y ACTIVIDAD, UNA DEBAJO DE OTRA, A TODO EL ANCHO ---------- */
+  .cuerpo{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    padding:20px 24px 32px;
+  }
+  .bloque{
+    background:var(--superficie);
+    border:1px solid var(--linea);
+    border-radius:6px;
+    min-width:0;
+  }
+  .bloque-cabecera{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--linea);
+  }
+  .bloque-cabecera span{font-size:14px;color:var(--tenue)}
+
+  /* ---------- TABLA DE ESTACIONES: UNA FILA POR ESTACION ---------- */
+  .tabla-caja{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th{
+    text-align:left;
+    font-weight:600;
+    font-size:13px;
+    color:var(--tenue);
+    padding:8px 12px;
+    border-bottom:2px solid var(--linea);
+    white-space:nowrap;
+  }
+  td{
+    padding:7px 12px;
+    border-bottom:1px solid var(--linea);
+    white-space:nowrap;
+  }
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:#F4F7F6}
+  tbody tr.elegida{background:var(--seleccion);box-shadow:inset 4px 0 0 var(--agua)}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .id{
+    font-family:var(--letra-estrecha);
+    font-weight:700;
+    font-size:18px;
+  }
+  .nada{color:var(--tenue)}
+
+  /* LA CELDA DEL ESTADO LLEVA EL COLOR DE FONDO */
+  td.estado{
+    text-align:center;
+    font-weight:600;
+    color:#fff;
+    min-width:170px;
+  }
+  .estado-DISPONIBLE{background:var(--disponible)}
+  .estado-REGANDO{background:var(--regando);animation:parpadeo 1s steps(1, end) infinite}
+  @keyframes parpadeo{50%{background:var(--regando-oscuro)}}
+  .estado-FUGA{background:var(--fuga)}
+  td.estado-FUERA_DE_SERVICIO{background:var(--fuera);color:var(--tinta)}
+  .estado-DESCONECTADA{background:var(--desconectada)}
+
+  td.acciones{padding-top:4px;padding-bottom:4px}
+  .acciones button{
+    background:#fff;
+    border:1.5px solid #9FB0AA;
+    border-radius:4px;
+    padding:2px 10px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    margin-right:6px;
+  }
+  .acciones button:hover{border-color:var(--tinta)}
+  .acciones button:disabled{opacity:.4;cursor:not-allowed}
+
+  .sin-central tbody{opacity:.45}
+
+  .vacio{padding:24px 16px;color:var(--tenue);margin:0}
+
+  /* ---------- RESUMEN: CUANTAS ESTACIONES HAY EN CADA ESTADO, CAUDAL Y AGUA TOTAL ---------- */
+  .resumen{
+    padding:16px 24px 4px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:10px 32px;
+    align-items:end;
+  }
+  .reparto{
+    display:flex;
+    height:16px;
+    border-radius:3px;
+    overflow:hidden;
+    background:var(--linea);
+  }
+  .reparto span{height:100%;transition:width .4s ease}
+  .cuentas{
+    list-style:none;margin:10px 0 0;padding:0;
+    display:flex;flex-wrap:wrap;gap:6px 22px;
+    font-size:15px;color:var(--tenue);
+  }
+  .cuentas li{display:flex;align-items:center;gap:7px}
+  .cuentas b{color:var(--tinta);font-weight:600;font-variant-numeric:tabular-nums}
+  .muestra{width:12px;height:12px;border-radius:2px;flex:none}
+  .totales{display:flex;gap:28px;text-align:right}
+  .cifra{
+    display:block;
+    font-family:var(--letra-estrecha);
+    font-weight:600;
+    font-size:32px;
+    line-height:1;
+  }
+  .cifra-texto{font-size:13px;color:var(--tenue)}
+
+  /* ---------- ACTIVIDAD ---------- */
+  .actividad{
+    height:240px;
+    overflow-y:auto;
+    margin:0;
+    padding:10px 16px;
+    background:#13232B;
+    color:#D7E3E8;
+    border-radius:0 0 6px 6px;
+    font-family:ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size:13px;
+    line-height:1.5;
+    list-style:none;
+  }
+  .actividad li{white-space:pre-wrap;overflow-wrap:anywhere}
+  .actividad .error{color:#FF9B8F}
+
+  @media (prefers-reduced-motion: reduce){
+    .estado-REGANDO{
+      animation:none;
+      background:repeating-linear-gradient(135deg, var(--regando) 0 10px, var(--regando-oscuro) 10px 20px);
+    }
+    .reparto span{transition:none}
+  }
+  @media (max-width: 900px){
+    .resumen{grid-template-columns:minmax(0,1fr)}
+    .totales{text-align:left}
+  }
+  @media (max-width: 520px){
+    .cabecera,.resumen,.cuerpo{padding-left:16px;padding-right:16px}
+    .ordenes{margin-left:16px;margin-right:16px}
+    .campo, .campo select{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header class="cabecera" id="cabecera">
+  <div class="marca">
+    <h1>WaterManagement</h1>
+    <p>Panel de Central</p>
+  </div>
+  <div class="conexion" role="status" aria-live="polite">
+    <span class="punto" aria-hidden="true"></span>
+    <span class="conexion-texto" id="conexion">Conectando con WM_Central…</span>
+  </div>
+</header>
+
+<section class="resumen" aria-label="Resumen de la red de riego">
+  <div>
+    <div class="reparto" id="reparto" aria-hidden="true"></div>
+    <ul class="cuentas" id="cuentas"></ul>
+  </div>
+  <div class="totales">
+    <div><span class="cifra" id="caudal-total">0,00</span><span class="cifra-texto">L/min ahora</span></div>
+    <div><span class="cifra" id="litros-total">0,00</span><span class="cifra-texto">L suministrados</span></div>
+  </div>
+</section>
+
+<section class="ordenes" aria-label="Órdenes de Central">
+  <div class="campo">
+    <label for="orden-estacion">Estación (o pulsa su fila)</label>
+    <select id="orden-estacion">
+      <option value="TODAS">Todas las estaciones</option>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="orden-duracion">Duración (s)</label>
+    <input id="orden-duracion" type="number" min="1" step="1" value="10">
+  </div>
+  <div class="botones">
+    <button class="boton boton-principal" type="button" data-accion="iniciar">Iniciar riego</button>
+    <button class="boton" type="button" data-accion="bloquear">Bloquear</button>
+    <button class="boton" type="button" data-accion="activar">Activar</button>
+  </div>
+  <p class="resultado" id="resultado" aria-live="polite"></p>
+</section>
+
+<main class="cuerpo" id="cuerpo">
+  <section class="bloque" aria-labelledby="titulo-estaciones">
+    <div class="bloque-cabecera">
+      <h2 id="titulo-estaciones">Estaciones de riego</h2>
+      <span id="registradas"></span>
+    </div>
+    <div class="tabla-caja">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Ubicación</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="num">Caudal (L/min)</th>
+            <th scope="col" class="num">Volumen (L)</th>
+            <th scope="col">Operario</th>
+            <th scope="col" class="num">Suministrado (L)</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="estaciones"></tbody>
+      </table>
+    </div>
+    <p class="vacio" id="vacio" hidden>Todavía no hay estaciones registradas. Aparecerán aquí en cuanto se conecte su Monitor.</p>
+  </section>
+
+  <section class="bloque" aria-labelledby="titulo-actividad">
+    <div class="bloque-cabecera">
+      <h2 id="titulo-actividad">Actividad de Central</h2>
+      <span>Lo mismo que muestra su terminal</span>
+    </div>
+    <ol class="actividad" id="actividad"></ol>
+  </section>
+</main>
+
+<script>
+// PANEL DE CENTRAL: CADA SEGUNDO PIDE /api/estado Y PINTA UNA FILA POR ESTACION Y LA ACTIVIDAD NUEVA.
+// LAS ORDENES SE ENVIAN A /api/orden. TODO EL TEXTO QUE VIENE DE CENTRAL SE PONE CON textContent (NUNCA COMO HTML)
+
+const ESTADOS = {
+  DISPONIBLE:        {texto: "Disponible",        una: "Disponible",        varias: "Disponibles",       color: "var(--disponible)"},
+  REGANDO:           {texto: "Regando",           una: "Regando",           varias: "Regando",           color: "var(--regando)"},
+  FUGA:              {texto: "Fuga",              una: "Con fuga",          varias: "Con fuga",          color: "var(--fuga)"},
+  FUERA_DE_SERVICIO: {texto: "Fuera de Servicio", una: "Fuera de servicio", varias: "Fuera de servicio", color: "var(--fuera)"},
+  DESCONECTADA:      {texto: "Desconectada",      una: "Desconectada",      varias: "Desconectadas",     color: "var(--desconectada)"}
+};
+const MAX_LINEAS = 500;
+
+const numero = new Intl.NumberFormat("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const $ = (id) => document.getElementById(id);
+
+let ultimaLinea = 0;      // ULTIMA LINEA DE LA ACTIVIDAD QUE YA TENEMOS
+const filas = new Map();  // ID DE LA ESTACION -> SU FILA
+
+// ---------------------------------------------------------------------------------------------
+// PEDIR EL ESTADO CADA SEGUNDO (LA SIGUIENTE PETICION SALE CUANDO TERMINA LA ANTERIOR)
+async function actualizar(){
+  try{
+    const respuesta = await fetch("/api/estado?desde=" + ultimaLinea, {cache: "no-store"});
+    if(!respuesta.ok){ throw new Error("HTTP " + respuesta.status); }
+    const datos = await respuesta.json();
+    conectado(true);
+    pintarEstaciones(datos.estaciones);
+    pintarActividad(datos.consola);
+  }catch(e){
+    conectado(false);
+  }finally{
+    setTimeout(actualizar, 1000);
+  }
+}
+
+function conectado(si){
+  document.body.classList.toggle("sin-central", !si);
+  $("cabecera").classList.toggle("desconectado", !si);
+  const hora = new Date().toLocaleTimeString("es-ES");
+  $("conexion").textContent = si ? "Central en marcha. Actualizado a las " + hora
+                                 : "Imposible conectar con WM_Central (último intento a las " + hora + ")";
+}
+
+// ---------------------------------------------------------------------------------------------
+// ESTACIONES
+function pintarEstaciones(estaciones){
+  $("vacio").hidden = estaciones.length > 0;
+  $("registradas").textContent = estaciones.length === 1 ? "1 registrada" : estaciones.length + " registradas";
+
+  const cuenta = {DISPONIBLE: 0, REGANDO: 0, FUGA: 0, FUERA_DE_SERVICIO: 0, DESCONECTADA: 0};
+  let caudal = 0, litros = 0;
+
+  for(const e of estaciones){
+    cuenta[e.estado] = (cuenta[e.estado] || 0) + 1;
+    litros += suministrado(e);
+    if(e.estado === "REGANDO" && e.riego){ caudal += e.riego.caudal; }
+    pintarFila(e);
+  }
+
+  // FILAS DE ESTACIONES QUE YA NO ESTAN (NO DEBERIA PASAR: CENTRAL NO BORRA ESTACIONES)
+  const ids = new Set(estaciones.map(e => e.id));
+  for(const [id, fila] of filas){
+    if(!ids.has(id)){ fila.tr.remove(); filas.delete(id); }
+  }
+
+  pintarResumen(cuenta, estaciones.length);
+  $("caudal-total").textContent = numero.format(caudal);
+  $("litros-total").textContent = numero.format(litros);
+  actualizarDesplegable(estaciones);
+}
+
+// LO SUMINISTRADO: LOS RIEGOS TERMINADOS MAS LO QUE LLEVA EL RIEGO EN MARCHA
+function suministrado(e){
+  return e.total + (e.estado === "REGANDO" && e.riego ? e.riego.volumen : 0);
+}
+
+function crearFila(id){
+  const tr = document.createElement("tr");
+  tr.innerHTML =
+    '<td class="id"></td><td class="ubicacion"></td><td class="estado"></td>' +
+    '<td class="num caudal"></td><td class="num volumen"></td><td class="operario"></td><td class="num total"></td>' +
+    '<td class="acciones"><button type="button" class="b-regar">Regar</button><button type="button" class="b-bloqueo"></button></td>';
+
+  const fila = {
+    tr,
+    ubicacion: tr.querySelector(".ubicacion"),
+    estado: tr.querySelector(".estado"),
+    caudal: tr.querySelector(".caudal"),
+    volumen: tr.querySelector(".volumen"),
+    operario: tr.querySelector(".operario"),
+    total: tr.querySelector(".total"),
+    regar: tr.querySelector(".b-regar"),
+    bloqueo: tr.querySelector(".b-bloqueo"),
+    claseEstado: ""
+  };
+  tr.querySelector(".id").textContent = id;
+
+  // PULSAR LA FILA LA ELIGE PARA LA BARRA DE ORDENES; LOS BOTONES DE LA FILA ACTUAN SOBRE ELLA DIRECTAMENTE
+  tr.addEventListener("click", (ev) => {
+    if(ev.target.closest("button")){ return; }
+    $("orden-estacion").value = id;
+    marcarElegida();
+  });
+  fila.regar.addEventListener("click", () => ordenar("iniciar", id));
+  fila.bloqueo.addEventListener("click", () => ordenar(fila.bloqueo.dataset.accion, id));
+
+  // SE COLOCA EN ORDEN DE ID (EL SERVIDOR LAS ENVIA ORDENADAS)
+  const siguiente = [...filas.keys()].sort().find(otro => otro > id);
+  $("estaciones").insertBefore(tr, siguiente ? filas.get(siguiente).tr : null);
+  filas.set(id, fila);
+  return fila;
+}
+
+function pintarFila(e){
+  const fila = filas.get(e.id) || crearFila(e.id);
+
+  // LA CLASE SOLO SE CAMBIA SI CAMBIA EL ESTADO: ASI EL PARPADEO NO SE REINICIA CADA SEGUNDO
+  const clase = "estado-" + e.estado;
+  if(fila.claseEstado !== clase){
+    if(fila.claseEstado){ fila.estado.classList.remove(fila.claseEstado); }
+    fila.estado.classList.add(clase);
+    fila.claseEstado = clase;
+  }
+
+  let estado = (ESTADOS[e.estado] || {texto: e.estado}).texto;
+  // BLOQUEADA PERO TODAVIA EN FUGA O DESCONECTADA: PASARA A FUERA DE SERVICIO AL RECUPERARSE
+  if(e.bloqueada && e.estado !== "FUERA_DE_SERVICIO"){ estado += ", bloqueada"; }
+  fila.estado.textContent = estado;
+  fila.ubicacion.textContent = e.ubicacion;
+
+  const regando = e.estado === "REGANDO" && e.riego;
+  const conectada = e.estado !== "DESCONECTADA";
+  poner(fila.caudal, regando ? numero.format(e.riego.caudal) : (conectada ? numero.format(0) : null));
+  poner(fila.volumen, regando ? numero.format(e.riego.volumen) : (conectada ? numero.format(0) : null));
+  if(regando){
+    poner(fila.operario, e.riego.operario);
+  }else if(e.estado === "DISPONIBLE" && e.riego){
+    poner(fila.operario, e.riego.operario + " (autorizando)");
+  }else{
+    poner(fila.operario, null);
+  }
+  poner(fila.total, numero.format(suministrado(e)));
+
+  fila.regar.disabled = e.estado !== "DISPONIBLE" || !!e.riego;
+  fila.bloqueo.dataset.accion = e.bloqueada ? "activar" : "bloquear";
+  fila.bloqueo.textContent = e.bloqueada ? "Activar" : "Bloquear";
+}
+
+// TEXTO DE UNA CELDA, O UN GUION GRIS SI NO HAY DATO
+function poner(celda, texto){
+  celda.textContent = texto === null ? "—" : texto;
+  celda.classList.toggle("nada", texto === null);
+}
+
+function pintarResumen(cuenta, total){
+  const reparto = $("reparto"), cuentas = $("cuentas");
+  reparto.replaceChildren();
+  cuentas.replaceChildren();
+  for(const [estado, info] of Object.entries(ESTADOS)){
+    const n = cuenta[estado] || 0;
+    if(total > 0 && n > 0){
+      const trozo = document.createElement("span");
+      trozo.style.width = (100 * n / total) + "%";
+      trozo.style.background = info.color;
+      reparto.appendChild(trozo);
+    }
+    const li = document.createElement("li");
+    const muestra = document.createElement("span");
+    muestra.className = "muestra";
+    muestra.style.background = info.color;
+    const b = document.createElement("b");
+    b.textContent = n;
+    li.append(muestra, b, " " + (n === 1 ? info.una : info.varias).toLowerCase());
+    cuentas.appendChild(li);
+  }
+}
+
+function actualizarDesplegable(estaciones){
+  const select = $("orden-estacion");
+  const actuales = [...select.options].slice(1).map(o => o.value).join("|");
+  const nuevas = estaciones.map(e => e.id).join("|");
+  if(actuales !== nuevas){
+    const elegida = select.value;
+    while(select.options.length > 1){ select.remove(1); }
+    for(const e of estaciones){
+      const opcion = document.createElement("option");
+      opcion.value = e.id;
+      opcion.textContent = e.id + " (" + e.ubicacion + ")";
+      select.appendChild(opcion);
+    }
+    select.value = [...select.options].some(o => o.value === elegida) ? elegida : "TODAS";
+  }
+  marcarElegida();
+}
+
+// RESALTA LA FILA DE LA ESTACION ELEGIDA EN EL DESPLEGABLE
+function marcarElegida(){
+  const elegida = $("orden-estacion").value;
+  for(const [id, fila] of filas){ fila.tr.classList.toggle("elegida", id === elegida); }
+}
+
+// ---------------------------------------------------------------------------------------------
+// ACTIVIDAD: LAS LINEAS NUEVAS DE LA TERMINAL DE CENTRAL
+function pintarActividad(consola){
+  const lista = $("actividad");
+  // CENTRAL SE HA REINICIADO: SU CUENTA DE LINEAS EMPIEZA DE NUEVO
+  if(consola.ultima < ultimaLinea){
+    lista.replaceChildren();
+    ultimaLinea = 0;
+    return;
+  }
+  const abajo = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 40;
+  for(const l of consola.lineas){
+    const li = document.createElement("li");
+    li.textContent = l.texto;
+    if(l.error){ li.className = "error"; }
+    lista.appendChild(li);
+  }
+  while(lista.children.length > MAX_LINEAS){ lista.firstElementChild.remove(); }
+  ultimaLinea = consola.ultima;
+  // SI ESTABAS LEYENDO MAS ARRIBA, NO TE MUEVE
+  if(abajo && consola.lineas.length){ lista.scrollTop = lista.scrollHeight; }
+}
+
+// ---------------------------------------------------------------------------------------------
+// ORDENES
+async function ordenar(accion, estacion){
+  const resultado = $("resultado");
+  const duracion = $("orden-duracion").value.trim();
+
+  if(accion === "iniciar" && !(Number.isInteger(Number(duracion)) && Number(duracion) > 0)){
+    resultado.textContent = "La duración tiene que ser un número entero de segundos mayor que 0.";
+    resultado.className = "resultado mal";
+    $("orden-duracion").focus();
+    return;
+  }
+  if(estacion === "TODAS" && accion === "bloquear" &&
+     !confirm("¿Bloquear todas las estaciones? Se pararán los riegos que estén en marcha.")){
+    return;
+  }
+
+  const botones = document.querySelectorAll("button");
+  botones.forEach(b => b.dataset.antes = b.disabled);
+  botones.forEach(b => b.disabled = true);
+  try{
+    const respuesta = await fetch("/api/orden", {
+      method: "POST",
+      body: new URLSearchParams({accion, estacion, duracion})
+    });
+    const texto = (await respuesta.text()).trim();
+    resultado.textContent = texto;
+    resultado.className = respuesta.ok ? "resultado" : "resultado mal";
+  }catch(e){
+    resultado.textContent = "Imposible conectar con WM_Central: la orden no se ha enviado.";
+    resultado.className = "resultado mal";
+  }finally{
+    botones.forEach(b => b.disabled = b.dataset.antes === "true");
+  }
+}
+
+document.querySelectorAll(".botones .boton").forEach(boton => {
+  boton.addEventListener("click", () => ordenar(boton.dataset.accion, $("orden-estacion").value));
+});
+$("orden-estacion").addEventListener("change", marcarElegida);
+
+actualizar();
+</script>
+</body>
+</html>

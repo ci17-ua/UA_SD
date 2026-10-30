@@ -7,6 +7,7 @@ public class Estacion {
     public EstadoWS estado;
     public boolean bloqueada;
     public Riego riegoActual;
+    public double litrosTotales;   //AGUA SUMINISTRADA EN LOS RIEGOS TERMINADOS DESDE QUE ARRANCO CENTRAL (PARA EL PANEL)
 
     public Estacion(String idEstacion, String ubicacion, boolean bloqueada, EstadoWS estado){
         this.idEstacion = idEstacion;
@@ -14,6 +15,7 @@ public class Estacion {
         this.bloqueada = bloqueada;
         this.estado = estado;
         this.riegoActual = null;
+        this.litrosTotales = 0;
     }
 
     //COMPRUEBA SI LA ESTACION YA ESTA CONECTADA, EN CASO DE QUE NO LA CONECTA
@@ -85,6 +87,15 @@ public class Estacion {
 
     public synchronized Riego getRiego(){
         return riegoActual;
+    }
+
+    //FIN: SUMA AL TOTAL DE LA ESTACION LOS LITROS DE UN RIEGO TERMINADO
+    public synchronized void sumarLitros(double litros){
+        litrosTotales = litrosTotales + litros;
+    }
+
+    public synchronized double getLitrosTotales(){
+        return litrosTotales;
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------

@@ -6,23 +6,36 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.watermanagement.central.db.DatabaseManager;
 import com.watermanagement.central.kafka.ProductorKafka;
+import com.watermanagement.central.web.Consola;
+import com.watermanagement.central.web.DashboardServer;
 
 public class WM_Central{
+
+    //PUERTO DEL PANEL WEB SI NO SE PASA EL CUARTO ARGUMENTO
+    public static final int PUERTO_WEB = 8080;
 
     public static void main(String args[]){
 
         //--------------------------------------------------------------------------------------------------------------------------------
-        //VALIDAR ARGUMENTOS
-        if(args.length != 3){
+        //A PARTIR DE AQUI, TODO LO QUE SE ESCRIBE EN PANTALLA SE GUARDA TAMBIEN PARA LA ACTIVIDAD DEL PANEL WEB
+        Consola.instalar();
+
+        //--------------------------------------------------------------------------------------------------------------------------------
+        //VALIDAR ARGUMENTOS (EL PUERTO DEL PANEL WEB ES OPCIONAL)
+        if(args.length != 3 && args.length != 4){
             System.err.println("ARGUMENTOS INCORRECTOS!!");
-            System.err.println("USO: /puerto_escucha_monitor /IP_kafka /puerto_escucha_kafka");
+            System.err.println("USO: /puerto_escucha_monitor /IP_kafka /puerto_escucha_kafka [/puerto_panel_web (por defecto " + PUERTO_WEB + ")]");
             System.exit(1);
         }
 
         //VALIDACION DE PUERTOS
+        int puerto_web = PUERTO_WEB;
         try{
             Integer.parseInt(args[0]);
             Integer.parseInt(args[2]);
+            if(args.length == 4){
+                puerto_web = Integer.parseInt(args[3]);
+            }
         }catch(NumberFormatException e){
             System.err.println("LOS PUERTOS TIENEN QUE SER NUMEROS!!");
             System.exit(1);
@@ -30,6 +43,7 @@ public class WM_Central{
         
         System.out.println(("El sistema central escucha al monitor por el puerto: " + args[0]));
         System.out.println("El Kafka se encuentra en: " + args[1] + ":" + args[2]);
+        System.out.println("El panel web escucha por el puerto: " + puerto_web);
 
         String puerto = args[0];
         
@@ -86,8 +100,16 @@ public class WM_Central{
         latido.start();
 
         //--------------------------------------------------------------------------------------------------------------------------------
-        //HILO PRINCIPAL: MENU DE CENTRAL PARA ENVIAR ORDENES A UNA ESTACION O A TODAS (INICIAR RIEGO, BLOQUEAR Y ACTIVAR)
+        //ORDENES A UNA ESTACION O A TODAS (INICIAR RIEGO, BLOQUEAR Y ACTIVAR): LAS USAN EL PANEL WEB Y EL MENU
         Ordenes ordenes = new Ordenes(registro, dbmg, productor);
+
+        //--------------------------------------------------------------------------------------------------------------------------------
+        //PANEL WEB (SUS PROPIOS HILOS ATIENDEN A LOS NAVEGADORES). SI NO ARRANCA, CENTRAL SIGUE CON EL MENU
+        DashboardServer panel = new DashboardServer(puerto_web, registro, ordenes);
+        panel.arrancar();
+
+        //--------------------------------------------------------------------------------------------------------------------------------
+        //HILO PRINCIPAL: MENU DE CENTRAL
         menu(ordenes, registro);
     }
 
