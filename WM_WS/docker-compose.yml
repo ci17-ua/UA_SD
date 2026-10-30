@@ -1,0 +1,295 @@
+# =========================================================
+# PC DEL LABORATORIO CON LAS ESTACIONES (WM_WS): 20 ESTACIONES, CADA UNA ES UN MONITOR + UN ENGINE
+# Se lanza desde esta carpeta (WM_WS). Central y Kafka estan en AWS: sus direcciones van en el fichero .env
+#   docker compose up -d --build                         (las 20 estaciones)
+#   docker compose up -d --build monitor-ws01 engine-ws01 monitor-ws02 engine-ws02   (solo algunas)
+#   docker compose ps                                    (que esta en marcha)
+#   docker compose logs -f monitor-ws01                  (lo que muestra un Monitor)
+#   docker attach engine-ws01                            (menu de un Engine; salir sin pararlo: Ctrl+P y despues Ctrl+Q)
+#   docker compose stop engine-ws03                      (caida de un Engine; docker compose start engine-ws03 para volver)
+#   docker compose down                                  (parar y quitar todo; los riegos a medias se quedan en el volumen)
+# =========================================================
+
+# LO QUE TIENEN EN COMUN TODOS LOS MONITORS Y TODOS LOS ENGINES (CADA SERVICIO LO COPIA CON <<: *monitor O <<: *engine)
+# JAVA_TOOL_OPTIONS LIMITA LA MEMORIA DE CADA JAVA: CON 40 PROGRAMAS EN EL MISMO PC, SIN LIMITE PODRIAN RESERVAR DEMASIADA
+x-monitor: &monitor
+  build: ./WS_M
+  image: wm-ws-monitor
+  environment:
+    JAVA_TOOL_OPTIONS: "-Xmx64m -XX:+UseSerialGC"
+
+x-engine: &engine
+  build: ./WS_E
+  image: wm-ws-engine
+  environment:
+    JAVA_TOOL_OPTIONS: "-Xmx128m -XX:+UseSerialGC"
+  volumes:
+    - riegos:/data                  # WM_RIEGO_DIR=/data (lo fija el Dockerfile): riego-<ID>.txt de cada Engine
+  stdin_open: true                  # el Engine tiene menu: hace falta para docker attach
+  tty: true
+
+services:
+
+  # ---------- ESTACION WS-01 ----------
+  monitor-ws01:
+    <<: *monitor
+    container_name: monitor-ws01
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-01", "Parque Norte"]
+
+  engine-ws01:
+    <<: *engine
+    container_name: engine-ws01
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws01", "5000"]
+
+  # ---------- ESTACION WS-02 ----------
+  monitor-ws02:
+    <<: *monitor
+    container_name: monitor-ws02
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-02", "Plaza Mayor"]
+
+  engine-ws02:
+    <<: *engine
+    container_name: engine-ws02
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws02", "5000"]
+
+  # ---------- ESTACION WS-03 ----------
+  monitor-ws03:
+    <<: *monitor
+    container_name: monitor-ws03
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-03", "Jardín Botánico"]
+
+  engine-ws03:
+    <<: *engine
+    container_name: engine-ws03
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws03", "5000"]
+
+  # ---------- ESTACION WS-04 ----------
+  monitor-ws04:
+    <<: *monitor
+    container_name: monitor-ws04
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-04", "Parque del Río"]
+
+  engine-ws04:
+    <<: *engine
+    container_name: engine-ws04
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws04", "5000"]
+
+  # ---------- ESTACION WS-05 ----------
+  monitor-ws05:
+    <<: *monitor
+    container_name: monitor-ws05
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-05", "Glorieta Sur"]
+
+  engine-ws05:
+    <<: *engine
+    container_name: engine-ws05
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws05", "5000"]
+
+  # ---------- ESTACION WS-06 ----------
+  monitor-ws06:
+    <<: *monitor
+    container_name: monitor-ws06
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-06", "Huerto Urbano"]
+
+  engine-ws06:
+    <<: *engine
+    container_name: engine-ws06
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws06", "5000"]
+
+  # ---------- ESTACION WS-07 ----------
+  monitor-ws07:
+    <<: *monitor
+    container_name: monitor-ws07
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-07", "Paseo Marítimo"]
+
+  engine-ws07:
+    <<: *engine
+    container_name: engine-ws07
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws07", "5000"]
+
+  # ---------- ESTACION WS-08 ----------
+  monitor-ws08:
+    <<: *monitor
+    container_name: monitor-ws08
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-08", "Jardines de la Torre"]
+
+  engine-ws08:
+    <<: *engine
+    container_name: engine-ws08
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws08", "5000"]
+
+  # ---------- ESTACION WS-09 ----------
+  monitor-ws09:
+    <<: *monitor
+    container_name: monitor-ws09
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-09", "Parque Central"]
+
+  engine-ws09:
+    <<: *engine
+    container_name: engine-ws09
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws09", "5000"]
+
+  # ---------- ESTACION WS-10 ----------
+  monitor-ws10:
+    <<: *monitor
+    container_name: monitor-ws10
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-10", "La Rosaleda"]
+
+  engine-ws10:
+    <<: *engine
+    container_name: engine-ws10
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws10", "5000"]
+
+  # ---------- ESTACION WS-11 ----------
+  monitor-ws11:
+    <<: *monitor
+    container_name: monitor-ws11
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-11", "Parque del Oeste"]
+
+  engine-ws11:
+    <<: *engine
+    container_name: engine-ws11
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws11", "5000"]
+
+  # ---------- ESTACION WS-12 ----------
+  monitor-ws12:
+    <<: *monitor
+    container_name: monitor-ws12
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-12", "Plaza de la Fuente"]
+
+  engine-ws12:
+    <<: *engine
+    container_name: engine-ws12
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws12", "5000"]
+
+  # ---------- ESTACION WS-13 ----------
+  monitor-ws13:
+    <<: *monitor
+    container_name: monitor-ws13
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-13", "Jardín de los Olivos"]
+
+  engine-ws13:
+    <<: *engine
+    container_name: engine-ws13
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws13", "5000"]
+
+  # ---------- ESTACION WS-14 ----------
+  monitor-ws14:
+    <<: *monitor
+    container_name: monitor-ws14
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-14", "Parque Lineal"]
+
+  engine-ws14:
+    <<: *engine
+    container_name: engine-ws14
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws14", "5000"]
+
+  # ---------- ESTACION WS-15 ----------
+  monitor-ws15:
+    <<: *monitor
+    container_name: monitor-ws15
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-15", "La Alameda"]
+
+  engine-ws15:
+    <<: *engine
+    container_name: engine-ws15
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws15", "5000"]
+
+  # ---------- ESTACION WS-16 ----------
+  monitor-ws16:
+    <<: *monitor
+    container_name: monitor-ws16
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-16", "Parque de la Estación"]
+
+  engine-ws16:
+    <<: *engine
+    container_name: engine-ws16
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws16", "5000"]
+
+  # ---------- ESTACION WS-17 ----------
+  monitor-ws17:
+    <<: *monitor
+    container_name: monitor-ws17
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-17", "Jardín Vertical"]
+
+  engine-ws17:
+    <<: *engine
+    container_name: engine-ws17
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws17", "5000"]
+
+  # ---------- ESTACION WS-18 ----------
+  monitor-ws18:
+    <<: *monitor
+    container_name: monitor-ws18
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-18", "Parque de las Palmeras"]
+
+  engine-ws18:
+    <<: *engine
+    container_name: engine-ws18
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws18", "5000"]
+
+  # ---------- ESTACION WS-19 ----------
+  monitor-ws19:
+    <<: *monitor
+    container_name: monitor-ws19
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-19", "Plaza del Mercado"]
+
+  engine-ws19:
+    <<: *engine
+    container_name: engine-ws19
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws19", "5000"]
+
+  # ---------- ESTACION WS-20 ----------
+  monitor-ws20:
+    <<: *monitor
+    container_name: monitor-ws20
+    # puerto_escucha_motor IP_central puerto_central ID_estacion ubicacion
+    command: ["5000", "${CENTRAL_HOST}", "${CENTRAL_PUERTO}", "WS-20", "Parque del Lago"]
+
+  engine-ws20:
+    <<: *engine
+    container_name: engine-ws20
+    # IP_kafka puerto_kafka IP_monitor puerto_monitor (el Monitor esta en este compose: se le llama por su nombre)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "monitor-ws20", "5000"]
+
+# UN SOLO VOLUMEN PARA LOS FICHEROS riego-<ID>.txt DE TODOS LOS ENGINES (EL ID VA EN EL NOMBRE)
+volumes:
+  riegos:

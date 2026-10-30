@@ -3,7 +3,7 @@
 # Se construye desde la raiz del repositorio:
 #   docker build -t wm-central ./WM_Central
 # Se lanza con -it (tiene menu) y con un volumen para la BBDD:
-#   docker run -it --name central -p 9090:9090 -v wm-central-datos:/data wm-central 9090 <IP_kafka> 9092
+#   docker run -it --name central -p 9090:9090 -p 8080:8080 -v wm-central-datos:/data wm-central 9090 <IP_kafka> 9092 8080
 # =========================================================
 
 # ---------- FASE 1: compilar con Maven ----------
@@ -40,13 +40,15 @@ COPY --from=builder /build/target/WM_Central-1.0-SNAPSHOT.jar WM_Central.jar
 ENV WM_DB_PATH=/data/watermanagement.db
 VOLUME ["/data"]
 
-# Puerto donde Central escucha a los Monitors (informativo: se publica con -p).
-EXPOSE 9090
+# Puertos de Central (informativos: se publican con -p):
+#   9090 los Monitors
+#   8080 el panel web
+EXPOSE 9090 8080
 
 # ENTRYPOINT lanza Central y CMD son los argumentos por defecto
-# (puerto_escucha_monitor IP_kafka puerto_kafka). Los argumentos de
+# (puerto_escucha_monitor IP_kafka puerto_kafka puerto_panel_web). Los argumentos de
 # "docker run WM_Central ..." sustituyen a los de CMD.
 # --enable-native-access evita el aviso de Java 25 al cargar la
 # libreria nativa de SQLite.
 ENTRYPOINT ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "WM_Central.jar"]
-CMD ["9090", "kafka", "9092"]
+CMD ["9090", "kafka", "9092", "8080"]

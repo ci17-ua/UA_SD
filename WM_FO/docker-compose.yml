@@ -1,0 +1,149 @@
+
+# =========================================================
+# PC DEL LABORATORIO CON LOS OPERARIOS (WM_FO): 20 OPERARIOS QUE LEEN SUS PETICIONES DE UN FICHERO (PRUEBA BASE, SIN INTERACCION)
+# Se lanza desde esta carpeta (WM_FO). Kafka esta en AWS: su direccion va en el fichero .env
+#   docker compose up -d --build                         (los 20 operarios)
+#   docker compose up -d --build fo-op01 fo-op02         (solo algunos)
+#   docker compose logs -f fo-op01                       (lo que ve un operario)
+#   docker compose run --rm fo-menu                      (un operario mas, OP99, con menu por teclado)
+# Cada operario lee peticiones/opXX.txt: una linea ID_ESTACION#DURACION por riego. Al acabar el fichero, su FO se cierra
+# =========================================================
+
+# LO QUE TIENEN EN COMUN TODOS LOS OPERARIOS
+x-fo: &fo
+  build: .
+  image: wm-fo
+  environment:
+    JAVA_TOOL_OPTIONS: "-Xmx128m -XX:+UseSerialGC"
+  volumes:
+    - ./peticiones:/peticiones      # la carpeta peticiones de este PC, montada dentro
+
+services:
+
+  fo-op01:
+    <<: *fo
+    container_name: fo-op01
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP01", "/peticiones/op01.txt"]
+
+  fo-op02:
+    <<: *fo
+    container_name: fo-op02
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP02", "/peticiones/op02.txt"]
+
+  fo-op03:
+    <<: *fo
+    container_name: fo-op03
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP03", "/peticiones/op03.txt"]
+
+  fo-op04:
+    <<: *fo
+    container_name: fo-op04
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP04", "/peticiones/op04.txt"]
+
+  fo-op05:
+    <<: *fo
+    container_name: fo-op05
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP05", "/peticiones/op05.txt"]
+
+  fo-op06:
+    <<: *fo
+    container_name: fo-op06
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP06", "/peticiones/op06.txt"]
+
+  fo-op07:
+    <<: *fo
+    container_name: fo-op07
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP07", "/peticiones/op07.txt"]
+
+  fo-op08:
+    <<: *fo
+    container_name: fo-op08
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP08", "/peticiones/op08.txt"]
+
+  fo-op09:
+    <<: *fo
+    container_name: fo-op09
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP09", "/peticiones/op09.txt"]
+
+  fo-op10:
+    <<: *fo
+    container_name: fo-op10
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP10", "/peticiones/op10.txt"]
+
+  fo-op11:
+    <<: *fo
+    container_name: fo-op11
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP11", "/peticiones/op11.txt"]
+
+  fo-op12:
+    <<: *fo
+    container_name: fo-op12
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP12", "/peticiones/op12.txt"]
+
+  fo-op13:
+    <<: *fo
+    container_name: fo-op13
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP13", "/peticiones/op13.txt"]
+
+  fo-op14:
+    <<: *fo
+    container_name: fo-op14
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP14", "/peticiones/op14.txt"]
+
+  fo-op15:
+    <<: *fo
+    container_name: fo-op15
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP15", "/peticiones/op15.txt"]
+
+  fo-op16:
+    <<: *fo
+    container_name: fo-op16
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP16", "/peticiones/op16.txt"]
+
+  fo-op17:
+    <<: *fo
+    container_name: fo-op17
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP17", "/peticiones/op17.txt"]
+
+  fo-op18:
+    <<: *fo
+    container_name: fo-op18
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP18", "/peticiones/op18.txt"]
+
+  fo-op19:
+    <<: *fo
+    container_name: fo-op19
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP19", "/peticiones/op19.txt"]
+
+  fo-op20:
+    <<: *fo
+    container_name: fo-op20
+    # IP_kafka puerto_kafka ID_operario fichero_peticiones (ruta DENTRO del contenedor)
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP20", "/peticiones/op20.txt"]
+
+  # ---------- OPERARIO CON MENU (NO ARRANCA CON up: SE LANZA CON docker compose run --rm fo-menu) ----------
+  fo-menu:
+    <<: *fo
+    profiles: ["menu"]
+    command: ["${KAFKA_HOST}", "${KAFKA_PUERTO}", "OP99"]
+    stdin_open: true
+    tty: true

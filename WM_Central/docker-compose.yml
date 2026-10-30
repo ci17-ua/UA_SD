@@ -2,6 +2,7 @@
 # PARTE CLOUD (INSTANCIA EC2 DE AWS): KAFKA + WM_CENTRAL (CON SU BBDD SQLITE EN UN VOLUMEN)
 # Se lanza desde esta carpeta (WM_Central), igual en la instancia que en tu PC:
 #   docker compose up -d --build
+# Panel web de Central: http://<IP_elastica>:8080
 # Para usar el menu de Central:
 #   docker attach central        (salir sin pararlo: Ctrl+P y despues Ctrl+Q)
 # La direccion por la que los PCs del laboratorio llegan a Kafka va en el fichero .env
@@ -69,12 +70,16 @@ services:
     # Si la instancia de AWS se para (para no gastar creditos) y se vuelve a arrancar,
     # Docker relanza Central y Kafka solos. Un docker stop o docker kill manual no lo relanza.
     restart: unless-stopped
+    # NO ARRANCA HASTA QUE kafka-topics HA TERMINADO BIEN: ASI KAFKA YA RESPONDE Y LOS 5 TOPICS EXISTEN
+    # (CON SOLO "- kafka" ARRANCABA A LA VEZ QUE KAFKA Y EL PRIMER LATIDO FALLABA)
     depends_on:
-      - kafka
+      kafka-topics:
+        condition: service_completed_successfully
     ports:
       - "9090:9090"                 # Monitors de los PCs del laboratorio
-    # puerto_escucha_monitor IP_kafka puerto_kafka (Central esta en este compose: entra por INTERNO)
-    command: ["9090", "kafka", "9093"]
+      - "8080:8080"                 # Panel web
+    # puerto_escucha_monitor IP_kafka puerto_kafka puerto_panel_web (Central esta en este compose: entra a Kafka por INTERNO)
+    command: ["9090", "kafka", "9093", "8080"]
     volumes:
       - central-datos:/data         # WM_DB_PATH=/data/watermanagement.db (lo fija el Dockerfile)
     stdin_open: true                # Central tiene menu: hace falta para docker attach
