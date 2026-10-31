@@ -59,6 +59,9 @@ services:
         for topic in peticiones-riego respuestas-fo ordenes-ws telemetria-ws estado-estaciones; do
           /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --create --if-not-exists --topic $$topic --partitions 1 --replication-factor 1
         done
+        # LA HORA DE CADA PETICION LA PONE KAFKA AL GUARDARLA, NO EL PC QUE LA ENVIA (QUE PUEDE IR CON EL RELOJ MAL).
+        # CENTRAL COMPARA ESA HORA CON SU ARRANQUE, Y KAFKA Y CENTRAL ESTAN EN LA MISMA MAQUINA, CON EL MISMO RELOJ
+        /opt/kafka/bin/kafka-configs.sh --bootstrap-server kafka:9093 --alter --entity-type topics --entity-name peticiones-riego --add-config message.timestamp.type=LogAppendTime
         echo "Topics creados:"
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --list
 
