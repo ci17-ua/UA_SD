@@ -1,0 +1,94 @@
+# CI/CD DE WATERMANAGEMENT
+#  - CI: CON CADA PUSH SE COMPILAN LOS CUATRO MODULOS CON MAVEN. SI ALGUNO NO COMPILA, LA ACCION FALLA Y NO SE DESPLIEGA
+#  - CD: SI TODO COMPILA Y EL PUSH ES A main, SE ENTRA POR SSH EN LA INSTANCIA EC2 Y SE RELANZA CENTRAL
+#        (git pull + docker compose up -d --build EN WM_Central)
+# EL LEARNER LAB SE APAGA AL TERMINAR CADA SESION: SI LA INSTANCIA ESTA PARADA, EL DESPLIEGUE FALLA.
+# EN ESE CASO SE RELANZA A MANO DESDE LA PESTAÑA Actions (Run workflow) CUANDO EL LABORATORIO ESTE ABIERTO
+#
+# SECRETOS DEL REPOSITORIO (Settings > Secrets and variables > Actions):
+#  - EC2_HOST: LA IP ELASTICA DE LA INSTANCIA (100.62.177.74)
+#  - EC2_SSH_KEY: EL CONTENIDO ENTERO DE labsuser.pem (AWS Details > Download PEM)
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    #LOS CAMBIOS SOLO DE DOCUMENTACION NO SE COMPILAN NI SE DESPLIEGAN
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'prompts/**'
+  pull_request:
+    branches: [main]
+  #BOTON "Run workflow" EN LA PESTAÑA Actions, PARA RELANZARLO A MANO
+  workflow_dispatch:
+
+jobs:
+  #----------------------------------------------------------------------------------------------------------------------
+  #CI: UN TRABAJO POR MODULO, EN PARALELO
+  compilar:
+    name: Compilar ${{ matrix.modulo }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        modulo: [WM_Central, WM_WS/WS_M, WM_WS/WS_E, WM_FO]
+    defaults:
+      run:
+        working-directory: ${{ matrix.modulo }}
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Compilar con Maven
+        run: mvn -B clean package
+
+  #----------------------------------------------------------------------------------------------------------------------
+  #CD: SOLO SI HAN COMPILADO LOS CUATRO Y ES UN PUSH (O UN LANZAMIENTO A MANO) EN main
+  desplegar:
+    name: Desplegar Central en AWS
+    needs: compilar
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    #DOS DESPLIEGUES SEGUIDOS NO SE PISAN: EL SEGUNDO ESPERA A QUE TERMINE EL PRIMERO
+    concurrency: despliegue-aws
+    steps:
+      - name: Preparar la clave SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$EC2_SSH_KEY" > ~/.ssh/labsuser.pem
+          chmod 600 ~/.ssh/labsuser.pem
+
+      #LA INSTANCIA YA TIENE EL REPOSITORIO CLONADO (CON SU CLAVE DE DESPLIEGUE DE SOLO LECTURA):
+      #SOLO HAY QUE TRAER LO NUEVO Y RECONSTRUIR. KAFKA Y LA BASE DE DATOS ESTAN EN VOLUMENES Y NO SE PIERDEN
+      - name: Actualizar y relanzar Central en la instancia
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ~/.ssh/labsuser.pem -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 ubuntu@"$EC2_HOST" '
+            set -e
+            cd ~/UA_SD/WM_Central
+            git pull --ff-only
+            git log --oneline -1
+            docker compose up -d --build
+            docker compose ps
+          '
+
+      #EL PANEL WEB TIENE QUE RESPONDER: SI NO, CENTRAL NO HA ARRANCADO BIEN
+      - name: Comprobar el panel web
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors -o /dev/null "http://$EC2_HOST:8080"
+          echo "PANEL DE CENTRAL FUNCIONANDO EN http://$EC2_HOST:8080"
