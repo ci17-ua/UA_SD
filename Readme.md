@@ -51,4 +51,4 @@ La guía de despliegue completa está en la memoria de la práctica.
 ## Documentación
 
 - `docs/DB.md`: base de datos de Central.
-- `prompts/prompts.md`: consultas realizadas a la IA durante el desarrollo.
+- `prompts/prompts.md`: consultas realizadas a la IA durante el desarrollo
