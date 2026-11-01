@@ -25,21 +25,14 @@ public class Hilo_Central extends Thread{
         this.estacion = null;
     }
 
+    //CADA MENSAJE VIAJA EN UNA TRAMA <STX><DATOS><ETX><LRC> Y SE CONFIRMA CON ACK O NACK (CLASE Trama)
     //LAS EXCEPCIONES NO SE CAPTURAN AQUI: SI EL MONITOR SE CAE, run() TIENE QUE ENTERARSE
     public static void escribeSocket(Socket socket, String cadena) throws IOException{
-        OutputStream output = socket.getOutputStream();
-        DataOutputStream data = new DataOutputStream(output);
-        data.writeUTF(cadena);
+        Trama.enviar(socket, cadena);
     }
 
     public static String leeSocket(Socket socket) throws IOException{
-        String cadena = "";
-
-        InputStream stream = socket.getInputStream();
-        DataInputStream data = new DataInputStream(stream);
-        cadena = data.readUTF();
-
-        return cadena;
+        return Trama.recibir(socket);
     }
 
     public void run(){
@@ -50,6 +43,9 @@ public class Hilo_Central extends Thread{
             //SI EN 3 SEGUNDOS NO LLEGA NINGUN MENSAJE, leeSocket LANZA SocketTimeoutException
             //VALE PARA EL ALTA, LA AUTENTICACION Y LOS MENSAJES DE VIDA
             socket_cliente.setSoTimeout(3000);
+
+            //EL MONITOR ABRE LA COMUNICACION CON ENQ Y CENTRAL LE CONTESTA ACK
+            Trama.esperarEnq(socket_cliente);
 
             cadena = leeSocket(socket_cliente);
             split = cadena.split("#");
