@@ -2,7 +2,13 @@ package com.watermanagement.fo;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ConsumerGroupDescription;
+import org.apache.kafka.common.errors.GroupIdNotFoundException;
 
 import com.watermanagement.fo.kafka.ProductorKafka;
 
@@ -76,6 +82,47 @@ public class WM_FO{
             return false;
         }
         return true;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------
+    //COMPRUEBA QUE NO HAYA YA OTRO FO FUNCIONANDO CON ESTE ID. SI LO HAY, TERMINA EL PROGRAMA
+    //CADA FO LEE CON EL GRUPO DE KAFKA fo-<ID>, Y KAFKA REPARTE LOS MENSAJES ENTRE LOS MIEMBROS DE UN GRUPO:
+    //DOS FO CON EL MISMO ID SE REPARTIRIAN LAS RESPUESTAS Y CADA UNO VERIA SOLO UNA PARTE
+    //SE PREGUNTA A KAFKA (CON UN Admin) SI ESE GRUPO YA TIENE MIEMBROS. SE HACE ANTES DE CREAR NUESTRO CONSUMIDOR,
+    //PARA NO CONTARNOS A NOSOTROS MISMOS
+    //(SI SE LANZAN DOS FO CON EL MISMO ID EXACTAMENTE A LA VEZ, LOS DOS PODRIAN PASAR LA COMPROBACION)
+    public static void comprobarIdLibre(String servidor_kafka){
+        String grupo = "fo-" + id_operario;
+
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, servidor_kafka);
+        //SI KAFKA NO RESPONDE, SE DEJA DE ESPERAR A LOS 15 SEGUNDOS
+        props.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, (int) MAX_SIN_RESPUESTA);
+        props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, 5000);
+
+        System.out.println("COMPROBANDO QUE NO HAYA OTRO OPERARIO " + id_operario + " CONECTADO...");
+
+        //try-with-resources: EL Admin SE CIERRA SOLO AL SALIR DEL try
+        try(Admin admin = Admin.create(props)){
+            ConsumerGroupDescription descripcion = admin.describeConsumerGroups(List.of(grupo)).describedGroups().get(grupo).get();
+
+            if(!descripcion.members().isEmpty()){
+                System.err.println("YA HAY UN OPERARIO " + id_operario + " CONECTADO!! (EL GRUPO " + grupo + " DE KAFKA YA TIENE MIEMBROS)");
+                System.err.println("SI LO ACABAS DE CERRAR DE GOLPE (SIN SALIR NI Ctrl+C), KAFKA TARDA HASTA 45 SEGUNDOS EN DARLO POR CAIDO: ESPERA Y VUELVE A LANZARLO");
+                System.exit(1);
+            }
+
+        }catch(ExecutionException e){
+            //EL GRUPO NO EXISTE: ES LA PRIMERA VEZ QUE SE USA ESTE ID, ASI QUE NO HAY NADIE MAS
+            if(e.getCause() instanceof GroupIdNotFoundException){
+                return;
+            }
+            System.err.println("IMPOSIBLE CONECTAR CON KAFKA!! (COMPRUEBA LA DIRECCION Y QUE ESTE ARRANCADO)");
+            System.err.println("Error: " + e.getCause().toString());
+            System.exit(1);
+        }catch(InterruptedException e){
+            System.exit(1);
+        }
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------
@@ -358,9 +405,14 @@ public class WM_FO{
         System.out.println("Kafka se encuentra en: " + argumentos[0] + ":" + puerto_kafka);
         System.out.println("El identificador del operario es: " + id_operario);
 
+        String servidor_kafka = argumentos[0] + ":" + puerto_kafka;
+
+        //--------------------------------------------------------------------------------------------------------------------------------
+        //DOS FO CON EL MISMO ID SE REPARTIRIAN LOS MENSAJES: SI YA HAY OTRO CONECTADO, ESTE TERMINA
+        comprobarIdLibre(servidor_kafka);
+
         //--------------------------------------------------------------------------------------------------------------------------------
         //PRODUCTOR DE KAFKA (PARA ENVIAR LAS PETICIONES)
-        String servidor_kafka = argumentos[0] + ":" + puerto_kafka;
         productor = new ProductorKafka(servidor_kafka);
 
         //--------------------------------------------------------------------------------------------------------------------------------
