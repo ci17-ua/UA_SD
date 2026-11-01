@@ -6,6 +6,7 @@ import java.net.*;
 //HILO QUE HABLA CON EL MOTOR (WM_WS_E)
 //SE LANZA UNA SOLA VEZ AL ARRANCAR EL MONITOR Y DURA TODO EL PROGRAMA:
 //  - ABRE EL ServerSocket Y ESPERA A QUE SE CONECTE EL MOTOR
+//  - EL MOTOR ABRE LA COMUNICACION CON ENQ Y EL MONITOR LE CONTESTA ACK
 //  - LE ENVIA ID#ID_ESTACION PARA QUE SEPA QUE ESTACION ES
 //  - CADA SEGUNDO LE ENVIA SALUD Y GUARDA SU RESPUESTA EN WM_WS_M.engine_ok, QUE LEE EL BUCLE DE VIDA
 //  - SI EL MOTOR SE CAE O DEJA DE RESPONDER, PONE engine_ok A FALSE Y VUELVE A ESPERAR A QUE SE CONECTE
@@ -42,6 +43,9 @@ public class Hilo_Motor extends Thread{
 
                 //SI EL MOTOR TARDA MAS DE 3 SEGUNDOS EN RESPONDER A SALUD, leeSocket LANZA SocketTimeoutException
                 socket_motor.setSoTimeout(3000);
+
+                //EL MONITOR ES EL SERVIDOR: ESPERA EL ENQ DEL MOTOR Y LE CONTESTA ACK
+                Trama.esperarEnq(socket_motor);
                 System.out.println("MOTOR CONECTADO DESDE " + socket_motor.getInetAddress().getHostAddress());
 
                 //EL MOTOR NO SABE QUE ESTACION ES HASTA QUE SE LO DICE EL MONITOR
