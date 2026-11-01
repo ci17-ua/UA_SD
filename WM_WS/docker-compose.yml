@@ -19,7 +19,6 @@ x-monitor: &monitor
     JAVA_TOOL_OPTIONS: "-Xmx64m -XX:+UseSerialGC"
     WM_TRAMAS_ERROR: ${WM_TRAMAS_ERROR:-0}     # PROBABILIDAD DE TRAMA CON EL LRC MAL (DEMOSTRACION DE NACK)
 
-
 x-engine: &engine
   build: ./WS_E
   image: wm-ws-engine

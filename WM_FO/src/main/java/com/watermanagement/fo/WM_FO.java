@@ -33,33 +33,6 @@ public class WM_FO{
     public static Hilo_Kafka_FO hilo_kafka;
     public static boolean cerrado = false;
 
-    public static void validacionArgumentos(String args[], BufferedReader buffer, String argumentos[]){
-
-        //3 ARGUMENTOS: CON MENU. 4 ARGUMENTOS: EL CUARTO ES EL FICHERO DE PETICIONES (SIN MENU)
-        if(args.length < 3 || args.length > 4){
-            try{
-                System.out.println("Introduce la direccion de Kafka: ");
-                argumentos[0] = buffer.readLine();
-                System.out.println("Introduce el puerto para conectarte a Kafka: ");
-                argumentos[1] = buffer.readLine();
-                System.out.println("Introduce el ID del operador: ");
-                argumentos[2] = buffer.readLine();
-            }catch(Exception e){
-                System.err.println("Error: " + e.toString());
-            }
-            argumentos[3] = null;
-        }else{
-            argumentos[0]=args[0];
-            argumentos[1]=args[1];
-            argumentos[2]=args[2];
-            if(args.length == 4){
-                argumentos[3]=args[3];
-            }else{
-                argumentos[3]=null;
-            }
-        }
-    }
-
     //------------------------------------------------------------------------------------------------------------------------------------
     //TRUE SI HACE MAS DE 6 SEGUNDOS QUE NO LLEGA NINGUN ESTADO DE CENTRAL
     public static boolean centralCaida(){
@@ -372,19 +345,18 @@ public class WM_FO{
 
     public static void main(String args[]){
 
-        InputStreamReader reader = new InputStreamReader(System.in);
-        BufferedReader buffer = new BufferedReader(reader);
-
-        String[] argumentos = new String[4];
-
         //--------------------------------------------------------------------------------------------------------------------------------
-        //VALIDAR ARGUMENTOS
-        validacionArgumentos(args, buffer, argumentos);
+        //VALIDAR ARGUMENTOS: 3 CON MENU, 4 SI SE PASA EL FICHERO DE PETICIONES (SIN MENU)
+        if(args.length != 3 && args.length != 4){
+            System.err.println("ARGUMENTOS INCORRECTOS!!");
+            System.err.println("USO: /IP_kafka /puerto_kafka /ID_operario [/fichero_peticiones (sin menu)]");
+            System.exit(1);
+        }
 
         //VALIDACION DEL PUERTO
         int puerto_kafka;
         try{
-            puerto_kafka = Integer.parseInt(argumentos[1]);
+            puerto_kafka = Integer.parseInt(args[1]);
         }catch(NumberFormatException e){
             System.err.println("EL PUERTO TIENE QUE SER UN NUMERO!!");
             System.exit(1);
@@ -392,8 +364,8 @@ public class WM_FO{
         }
 
         //VALIDACION DEL ID: CENTRAL Y WS ESTAN RESERVADOS PARA LOS RIEGOS PEDIDOS DESDE CENTRAL Y DESDE LA ESTACION
-        id_operario = argumentos[2];
-        if(id_operario == null || id_operario.isEmpty() || id_operario.contains("#")){
+        id_operario = args[2].trim();
+        if(id_operario.isEmpty() || id_operario.contains("#")){
             System.err.println("EL ID DEL OPERARIO NO PUEDE ESTAR VACIO NI CONTENER #!!");
             System.exit(1);
         }
@@ -402,10 +374,19 @@ public class WM_FO{
             System.exit(1);
         }
 
-        System.out.println("Kafka se encuentra en: " + argumentos[0] + ":" + puerto_kafka);
-        System.out.println("El identificador del operario es: " + id_operario);
+        //FICHERO DE PETICIONES (NULL: MENU)
+        String fichero = null;
+        if(args.length == 4){
+            fichero = args[3];
+        }
 
-        String servidor_kafka = argumentos[0] + ":" + puerto_kafka;
+        System.out.println("Kafka se encuentra en: " + args[0] + ":" + puerto_kafka);
+        System.out.println("El identificador del operario es: " + id_operario);
+        if(fichero != null){
+            System.out.println("El fichero de peticiones es: " + fichero);
+        }
+
+        String servidor_kafka = args[0] + ":" + puerto_kafka;
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //DOS FO CON EL MISMO ID SE REPARTIRIAN LOS MENSAJES: SI YA HAY OTRO CONECTADO, ESTE TERMINA
@@ -434,10 +415,10 @@ public class WM_FO{
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //CON FICHERO SE PROCESA SIN MENU; SIN FICHERO, MENU
-        if(argumentos[3] != null){
-            procesarFichero(argumentos[3]);
+        if(fichero != null){
+            procesarFichero(fichero);
         }else{
-            menu(buffer);
+            menu(new BufferedReader(new InputStreamReader(System.in)));
         }
 
         cerrar();

@@ -1,6 +1,9 @@
 package com.watermanagement.central;
 
-public class Estacion {
+//ESTACION VISTA DESDE CENTRAL: SU ESTADO, SI ESTA BLOQUEADA Y SU RIEGO
+//LA COMPARTEN TODOS LOS HILOS DE CENTRAL (UN Hilo_Central POR MONITOR, EL DE KAFKA, EL DEL LATIDO, EL MENU Y EL PANEL WEB):
+//POR ESO TODOS LOS METODOS QUE LEEN O CAMBIAN SU ESTADO SON synchronized
+public class Estacion{
 
     public final String idEstacion;
     public final String ubicacion;
@@ -18,9 +21,10 @@ public class Estacion {
         this.litrosTotales = 0;
     }
 
-    //COMPRUEBA SI LA ESTACION YA ESTA CONECTADA, EN CASO DE QUE NO LA CONECTA
-    //true: autenticacion correcta
-    //false: autenticacion fallida
+    //AUTENTICAR: SI LA ESTACION NO ESTA YA CONECTADA, LA CONECTA (DISPONIBLE, O FUERA_DE_SERVICIO SI ESTA BLOQUEADA)
+    //COMPRUEBA Y CAMBIA EL ESTADO A LA VEZ, ASI DOS MONITORS CON EL MISMO ID NO PUEDEN CONECTARSE A LA VEZ
+    //TRUE: AUTENTICACION CORRECTA
+    //FALSE: YA HABIA UNA ESTACION CON ESE ID CONECTADA
     public synchronized boolean autenticar(){
         if(estado != EstadoWS.DESCONECTADA){
             return false;
@@ -33,13 +37,14 @@ public class Estacion {
         return true;
     }
 
+    //SE HA CORTADO LA CONEXION CON SU MONITOR
     public synchronized void desconectar(){
         estado = EstadoWS.DESCONECTADA;
     }
 
-    //Cambia el estado a fuga
-    //true: si se cambia exitosamente
-    //false: si ya esta marcada la fuga
+    //VIDA CON KO: LA ESTACION PASA A FUGA
+    //TRUE: HA PASADO A FUGA AHORA
+    //FALSE: YA ESTABA EN FUGA
     public synchronized boolean marcarFuga(){
         if(estado == EstadoWS.FUGA){
             return false;
@@ -48,9 +53,9 @@ public class Estacion {
         return true;
     }
 
-    //Cambia el estado de fuga a fuera de servicio o disponible
-    //true: se cambia el estado correctamente
-    //false: no habia fuga que resolver
+    //VIDA CON OK DESPUES DE UNA FUGA: VUELVE A DISPONIBLE (O A FUERA_DE_SERVICIO SI ESTA BLOQUEADA)
+    //TRUE: SE HA RESUELTO LA FUGA
+    //FALSE: NO HABIA FUGA QUE RESOLVER
     public synchronized boolean fugaResuelta(){
         if(estado != EstadoWS.FUGA){
             return false;
@@ -63,7 +68,7 @@ public class Estacion {
         return true;
     }
 
-    //Estado que se guarda en le BBDD
+    //ESTADO QUE SE GUARDA EN LA BBDD
     //  - BLOQUEADA: SIEMPRE FUERA_DE_SERVICIO, AUNQUE EN PANTALLA SE VEA FUGA
     //  - DESCONECTADA (SOLO PASA AL ACTIVARLA DESDE EL MENU): DISPONIBLE
     //  - EN OTRO CASO: EL ESTADO REAL
@@ -105,8 +110,8 @@ public class Estacion {
     //SI ESTABA DISPONIBLE O REGANDO PASA A FUERA_DE_SERVICIO EN EL ACTO. EL RIEGO LO PARA EL ENGINE AL RECIBIR BLOQUEAR,
     //Y SU FIN YA NO LA DEVUELVE A DISPONIBLE (terminarRiego SOLO CAMBIA EL ESTADO SI ESTABA REGANDO)
     //SI ESTA EN FUGA O DESCONECTADA SE QUEDA COMO ESTA: PASA A FUERA_DE_SERVICIO AL RESOLVERSE LA FUGA O AL AUTENTICARSE
-    //true: se ha bloqueado
-    //false: ya estaba bloqueada
+    //TRUE: SE HA BLOQUEADO
+    //FALSE: YA ESTABA BLOQUEADA
     public synchronized boolean bloquear(){
         if(bloqueada){
             return false;
@@ -120,8 +125,8 @@ public class Estacion {
 
     //ACTIVAR: QUITA EL BLOQUEO. SI ESTABA FUERA_DE_SERVICIO VUELVE A DISPONIBLE
     //SI ESTA EN FUGA O DESCONECTADA SE QUEDA COMO ESTA: PASA A DISPONIBLE AL RESOLVERSE LA FUGA O AL AUTENTICARSE
-    //true: se ha activado
-    //false: no estaba bloqueada
+    //TRUE: SE HA ACTIVADO
+    //FALSE: NO ESTABA BLOQUEADA
     public synchronized boolean activar(){
         if(!bloqueada){
             return false;
@@ -138,8 +143,8 @@ public class Estacion {
 
     //PETICION: RESERVA LA ESTACION PARA UN RIEGO SI ESTA LIBRE (DISPONIBLE Y SIN OTRO RIEGO)
     //COMPRUEBA Y RESERVA A LA VEZ, ASI DOS PETICIONES NO PUEDEN QUEDARSE CON LA MISMA ESTACION
-    //null: reservada
-    //texto: el motivo por el que no se puede regar (va en el DENEGADO)
+    //NULL: RESERVADA
+    //TEXTO: EL MOTIVO POR EL QUE NO SE PUEDE REGAR (VA EN EL DENEGADO)
     public synchronized String reservar(Riego riego){
         switch(estado){
             case DESCONECTADA:
@@ -225,5 +230,4 @@ public class Estacion {
         riegoActual = null;
         return riego;
     }
-
 }

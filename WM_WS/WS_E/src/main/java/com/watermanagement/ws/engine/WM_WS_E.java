@@ -365,54 +365,30 @@ public class WM_WS_E{
         System.out.println("CENTRAL NO HA AUTORIZADO EL RIEGO (ESTACION NO DISPONIBLE O IMPOSIBLE CONECTAR CON WM_CENTRAL)");
     }
 
-    public static void validacionArgumentos(String args[], BufferedReader buffer, String argumentos[]){
-
-        if(args.length != 4){
-            try{
-                System.out.println("Introduce la direccion de Kafka: ");
-                argumentos[0] = buffer.readLine();
-                System.out.println("Introduce el puerto de escucha de Kafka: ");
-                argumentos[1] = buffer.readLine();
-                System.out.println("Introduce la direccion del Monitor: ");
-                argumentos[2] = buffer.readLine();
-                System.out.println("Introduce el puerto de escucha del Monitor: ");
-                argumentos[3] = buffer.readLine();
-            }catch(Exception e){
-                System.err.println("Error: " + e.toString());
-            }
-        }else{
-            argumentos[0]=args[0];
-            argumentos[1]=args[1];
-            argumentos[2]=args[2];
-            argumentos[3]=args[3];
-        }
-    }
-
     public static void main(String args[]){
-
-        InputStreamReader reader = new InputStreamReader(System.in);
-        BufferedReader buffer = new BufferedReader(reader);
-
-        String[] argumentos = new String[4];
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //VALIDAR ARGUMENTOS
-        validacionArgumentos(args, buffer, argumentos);
+        if(args.length != 4){
+            System.err.println("ARGUMENTOS INCORRECTOS!!");
+            System.err.println("USO: /IP_kafka /puerto_kafka /IP_monitor /puerto_monitor");
+            System.exit(1);
+        }
 
         //VALIDACION DE PUERTOS
         int puerto_kafka;
         int puerto_monitor;
         try{
-            puerto_kafka = Integer.parseInt(argumentos[1]);
-            puerto_monitor = Integer.parseInt(argumentos[3]);
+            puerto_kafka = Integer.parseInt(args[1]);
+            puerto_monitor = Integer.parseInt(args[3]);
         }catch(NumberFormatException e){
             System.err.println("LOS PUERTOS TIENEN QUE SER NUMEROS!!");
             System.exit(1);
             return;
         }
 
-        System.out.println("Kafka se encuentra en: " + argumentos[0] + ":" + puerto_kafka);
-        System.out.println("El monitor se encuentra en: " + argumentos[2] + ":" + puerto_monitor);
+        System.out.println("Kafka se encuentra en: " + args[0] + ":" + puerto_kafka);
+        System.out.println("El monitor se encuentra en: " + args[2] + ":" + puerto_monitor);
 
         //CARPETA DEL FICHERO DEL RIEGO (EN DOCKER LA FIJA EL Dockerfile: /data)
         carpeta_riegos = System.getenv().getOrDefault("WM_RIEGO_DIR", ".");
@@ -421,7 +397,7 @@ public class WM_WS_E{
         //HILO DEL MONITOR: SE LANZA LO PRIMERO Y DURA TODO EL PROGRAMA
         //SE CONECTA AL MONITOR, RECIBE EL ID Y RESPONDE A SALUD. SI EL MONITOR SE CAE, SE VUELVE A CONECTAR
         //TIENE QUE ESTAR RESPONDIENDO A SALUD MIENTRAS SE PREPARA KAFKA: SI NO, EL MONITOR NOS DARIA POR CAIDOS
-        Thread hilo_monitor = new Hilo_Monitor(argumentos[2], puerto_monitor);
+        Thread hilo_monitor = new Hilo_Monitor(args[2], puerto_monitor);
         hilo_monitor.start();
 
         //--------------------------------------------------------------------------------------------------------------------------------
@@ -436,7 +412,7 @@ public class WM_WS_E{
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //CREAR UN PRODUCTOR DE KAFKA COMPARTIDO
-        String servidor_kafka = argumentos[0] + ":" + puerto_kafka;
+        String servidor_kafka = args[0] + ":" + puerto_kafka;
         productor = new ProductorKafka(servidor_kafka);
 
         //--------------------------------------------------------------------------------------------------------------------------------
@@ -451,6 +427,6 @@ public class WM_WS_E{
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //MENU: AVERIA, RIEGO MANUAL Y PARAR EL RIEGO
-        menu(buffer);
+        menu(new BufferedReader(new InputStreamReader(System.in)));
     }
 }

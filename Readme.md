@@ -1,5 +1,4 @@
-
-    # WaterManagement · Release 1
+# WaterManagement · Release 1
 
 Práctica de **Sistemas Distribuidos** (Universidad de Alicante, curso 2026/27): simulación de la gestión centralizada del riego de los parques y jardines de una ciudad.
 
@@ -41,6 +40,17 @@ java -jar target/WM_FO-1.0-SNAPSHOT.jar localhost 9092 OP01
 
 Panel web de Central: `http://localhost:8080`.
 
+## Protocolo de los sockets
+
+Los mensajes entre Central y el Monitor, y entre el Monitor y el Engine, viajan en tramas `<STX><DATOS><ETX><LRC>`, donde el LRC es el XOR de los bytes de los datos. Quien recibe responde `ACK` si el LRC cuadra y `NACK` si no, y con `NACK` se repite la trama (hasta 3 intentos). Al conectarse, el cliente envía `ENQ` y el servidor contesta `ACK`; quien termina de forma ordenada envía `EOT`. Lo implementa la clase `Trama`, igual en los tres módulos.
+
+Variables de entorno para la demostración (Monitor y Engine):
+
+| Variable | Efecto |
+|---|---|
+| `WM_TRAMAS_ERROR` | Probabilidad (0 a 1) de enviar una trama con el LRC mal a propósito, para ver los `NACK` y las repeticiones |
+| `WM_TRAMAS_TRAZA=1` | Muestra cada trama que se envía y se recibe |
+
 ## Despliegue
 
 - **Cloud (AWS EC2):** `WM_Central/docker-compose.yml` levanta Kafka, crea los topics y arranca Central. La IP pública de la instancia va en `WM_Central/.env`.
@@ -48,7 +58,11 @@ Panel web de Central: `http://localhost:8080`.
 
 La guía de despliegue completa está en la memoria de la práctica.
 
+## CI/CD
+
+`.github/workflows/ci-cd.yml`: con cada push a `main`, GitHub Actions compila los cuatro módulos con Maven y, si todo compila, entra por SSH en la instancia de AWS y relanza Central (`git pull` y `docker compose up -d --build` en `WM_Central`). La IP y la clave SSH van en los secretos `EC2_HOST` y `EC2_SSH_KEY` del repositorio.
+
 ## Documentación
 
 - `docs/DB.md`: base de datos de Central.
-- `prompts/prompts.md`: consultas realizadas a la IA durante el desarrollo
+- `prompts/prompts.md`: consultas realizadas a la IA durante el desarrollo.

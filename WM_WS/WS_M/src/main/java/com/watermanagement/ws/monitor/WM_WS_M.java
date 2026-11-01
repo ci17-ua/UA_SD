@@ -13,7 +13,7 @@ public class WM_WS_M{
 
     //CADA MENSAJE VIAJA EN UNA TRAMA <STX><DATOS><ETX><LRC> Y SE CONFIRMA CON ACK O NACK (CLASE Trama)
     //LOS USAN EL BUCLE DE VIDA (CON CENTRAL) Y Hilo_Motor (CON EL MOTOR)
-    public static void escribeSocket (Socket socket, String cadena) throws IOException{
+    public static void escribeSocket(Socket socket, String cadena) throws IOException{
         Trama.enviar(socket, cadena);
     }
 
@@ -49,7 +49,7 @@ public class WM_WS_M{
             System.exit(1);
         }
 
-        System.out.println(("El monitor escucha al motor por el puerto: " + puerto_motor));
+        System.out.println("El monitor escucha al motor por el puerto: " + puerto_motor);
         System.out.println("El sistema central se encuentra en: " + args[1] + ":" + puerto_central);
         System.out.println("El identificador de la estacion es: " + args[3]);
 

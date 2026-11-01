@@ -29,9 +29,10 @@ public class WM_Central{
         }
 
         //VALIDACION DE PUERTOS
+        int puerto_monitor;
         int puerto_web = PUERTO_WEB;
         try{
-            Integer.parseInt(args[0]);
+            puerto_monitor = Integer.parseInt(args[0]);
             Integer.parseInt(args[2]);
             if(args.length == 4){
                 puerto_web = Integer.parseInt(args[3]);
@@ -39,14 +40,13 @@ public class WM_Central{
         }catch(NumberFormatException e){
             System.err.println("LOS PUERTOS TIENEN QUE SER NUMEROS!!");
             System.exit(1);
+            return;
         }
-        
-        System.out.println(("El sistema central escucha al monitor por el puerto: " + args[0]));
+
+        System.out.println("El sistema central escucha al monitor por el puerto: " + puerto_monitor);
         System.out.println("El Kafka se encuentra en: " + args[1] + ":" + args[2]);
         System.out.println("El panel web escucha por el puerto: " + puerto_web);
 
-        String puerto = args[0];
-        
         //--------------------------------------------------------------------------------------------------------------------------------
         //ABRIR LA BASE DE DATOS, CREAR TABLAS SI NO EXISTEN
         //(LOS OPERARIOS NO SE INSERTAN AQUI: CADA UNO SE DA DE ALTA CON SU PRIMERA PETICION)
@@ -56,13 +56,12 @@ public class WM_Central{
         //--------------------------------------------------------------------------------------------------------------------------------
         //CARGAR LAS ESTACIONES DE LA BBDD A MEMORIA
         Map<String, Estacion> registro = new ConcurrentHashMap<>();
-        List<Estacion> estaciones = new ArrayList<>();
 
         try{
             dbmg.crearTablas();
-            estaciones = dbmg.cargarEstaciones();
-            
-            for (Estacion e : estaciones){
+            List<Estacion> estaciones = dbmg.cargarEstaciones();
+
+            for(Estacion e : estaciones){
                 registro.put(e.idEstacion, e);
             }
             System.out.println("SE HA CARGADO LA BASE DE DATOS CORRECTAMENTE!!");
@@ -73,7 +72,7 @@ public class WM_Central{
             System.err.println("Error: " + e.toString());
             System.exit(1);
         }
-        
+
         //--------------------------------------------------------------------------------------------------------------------------------
         //ANOTAR HORA DE ARRANQUE, COMPROBAR PARA CADA RIEGO QUE EL TIEMPO ES POSTERIOR
         long horaArranque = System.currentTimeMillis();
@@ -85,8 +84,8 @@ public class WM_Central{
 
         //--------------------------------------------------------------------------------------------------------------------------------
         //HILO QUE ACEPTA CONEXIONES DE ESTACIONES
-        Thread aceptador = new Hilo_Acept_Sock(puerto, dbmg, registro, productor);
-        System.out.println("SE ACABA DE DELEGAR LA ACEPTACIÓN DE ESTACIONES A OTRO HILO!!");
+        Thread aceptador = new Hilo_Acept_Sock(puerto_monitor, dbmg, registro, productor);
+        System.out.println("SE ACABA DE DELEGAR LA ACEPTACION DE ESTACIONES A OTRO HILO!!");
         aceptador.start();
 
         //--------------------------------------------------------------------------------------------------------------------------------

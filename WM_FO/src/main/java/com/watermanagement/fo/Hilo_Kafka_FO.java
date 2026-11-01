@@ -129,7 +129,7 @@ public class Hilo_Kafka_FO extends Thread{
                             break;
 
                             //------------------------------------------------------------------------------------------------------------
-                            //estado-estaciones: TODO. CADA MENSAJE ES ADEMAS UN LATIDO DE CENTRAL
+                            //estado-estaciones: TODOS LOS MENSAJES. CADA UNO ES ADEMAS UN LATIDO DE CENTRAL
                             case "LATIDO":
                                 //LATIDO (CADA 2 SEGUNDOS, AUNQUE CENTRAL NO TENGA NINGUNA ESTACION)
                                 ultimo_latido = System.currentTimeMillis();

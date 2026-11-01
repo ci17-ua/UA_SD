@@ -1,9 +1,10 @@
 package com.watermanagement.central;
 
-public enum EstadoWS {
-    DISPONIBLE, 
-    REGANDO, 
-    FUGA, 
-    FUERA_DE_SERVICIO, 
+//ESTADOS DE UNA ESTACION EN CENTRAL (LOS COLORES DEL PANEL: VERDE, VERDE PARPADEANTE, ROJO, NARANJA Y GRIS)
+public enum EstadoWS{
+    DISPONIBLE,
+    REGANDO,
+    FUGA,
+    FUERA_DE_SERVICIO,
     DESCONECTADA
 }
