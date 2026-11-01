@@ -5,7 +5,7 @@ import java.net.*;
 
 //HILO QUE HABLA CON EL MONITOR (WM_WS_M)
 //SE LANZA UNA SOLA VEZ AL ARRANCAR EL MOTOR Y DURA TODO EL PROGRAMA:
-//  - SE CONECTA AL MONITOR (SI NO ESTA, REINTENTA CADA 3 SEGUNDOS)
+//  - SE CONECTA AL MONITOR (SI NO ESTA, REINTENTA CADA 3 SEGUNDOS) Y ABRE LA COMUNICACION CON ENQ
 //  - EL PRIMER MENSAJE DEL MONITOR ES ID#ID_ESTACION: ASI SABE EL MOTOR QUE ESTACION ES
 //  - DESPUES RESPONDE OK O KO A CADA SALUD
 //  - SI PASAN 3 SEGUNDOS SIN SALUD O SE CORTA LA CONEXION, EL MONITOR HA CAIDO: SIN MONITOR NO SE RIEGA
@@ -28,8 +28,11 @@ public class Hilo_Monitor extends Thread{
             try(Socket socket_monitor = new Socket(ip_monitor, puerto_monitor)){
 
                 //SI EL MONITOR TARDA MAS DE 3 SEGUNDOS EN ENVIAR ALGO, leeSocket LANZA SocketTimeoutException
-                //(VALE PARA EL ID Y PARA CADA SALUD)
+                //(VALE PARA EL ACK DEL ENQ, PARA EL ID Y PARA CADA SALUD)
                 socket_monitor.setSoTimeout(3000);
+
+                //EL MOTOR ES EL CLIENTE: ABRE LA COMUNICACION CON ENQ Y EL MONITOR LE CONTESTA ACK
+                Trama.enviarEnq(socket_monitor);
 
                 //PRIMER MENSAJE: ID#ID_ESTACION
                 cadena = WM_WS_E.leeSocket(socket_monitor);
@@ -48,6 +51,8 @@ public class Hilo_Monitor extends Thread{
                     else if(!WM_WS_E.id_estacion.equals(split[1])){
                         System.err.println("ESTE MOTOR ES DE LA ESTACION " + WM_WS_E.id_estacion + " Y EL MONITOR ES DE LA " + split[1] + "!!");
                         System.err.println("RELANZA EL MOTOR PARA CAMBIAR DE ESTACION");
+                        //FIN ORDENADO DE LA COMUNICACION ANTES DE TERMINAR
+                        Trama.enviarEot(socket_monitor);
                         System.exit(1);
                     }
 
@@ -94,8 +99,8 @@ public class Hilo_Monitor extends Thread{
                 System.exit(1);
             }catch(SocketTimeoutException e){
                 if(WM_WS_E.sin_monitor){
-                    //SE HA CONECTADO PERO NO LE HA LLEGADO EL ID: EL MONITOR ATIENDE A UN SOLO MOTOR A LA VEZ
-                    System.out.println("EL MONITOR NO HA ENVIADO EL ID EN 3 SEGUNDOS (PUEDE QUE YA TENGA OTRO MOTOR CONECTADO)");
+                    //SE HA CONECTADO PERO EL MONITOR NO LE HA CONTESTADO: EL MONITOR ATIENDE A UN SOLO MOTOR A LA VEZ
+                    System.out.println("EL MONITOR NO HA RESPONDIDO EN 3 SEGUNDOS (PUEDE QUE YA TENGA OTRO MOTOR CONECTADO)");
                 }else{
                     System.out.println("EL MONITOR LLEVA 3 SEGUNDOS SIN ENVIAR SALUD!!");
                 }

@@ -42,21 +42,14 @@ public class WM_WS_E{
         return h != null && h.estaListo();
     }
 
-    public static void escribeSocket (Socket socket, String cadena) throws IOException{
-
-        OutputStream stream = socket.getOutputStream();
-        DataOutputStream data = new DataOutputStream(stream);
-        data.writeUTF(cadena);
+    //CADA MENSAJE VIAJA EN UNA TRAMA <STX><DATOS><ETX><LRC> Y SE CONFIRMA CON ACK O NACK (CLASE Trama)
+    //LOS USA Hilo_Monitor PARA EL ID Y LOS SALUD
+    public static void escribeSocket(Socket socket, String cadena) throws IOException{
+        Trama.enviar(socket, cadena);
     }
 
     public static String leeSocket(Socket socket) throws IOException{
-        String cadena = "";
-
-        InputStream stream = socket.getInputStream();
-        DataInputStream data = new DataInputStream(stream);
-        cadena = data.readUTF();
-
-        return cadena;
+        return Trama.recibir(socket);
     }
 
     //DECIMALES SIEMPRE CON PUNTO (CENTRAL LOS LEE CON Double.parseDouble): CON EL FORMATO POR DEFECTO, UN WINDOWS EN ESPAÑOL PONDRIA COMA
