@@ -1,8 +1,11 @@
 # =========================================================
 # PC DEL LABORATORIO CON LAS ESTACIONES (WM_WS): 20 ESTACIONES, CADA UNA ES UN MONITOR + UN ENGINE
 # Se lanza desde esta carpeta (WM_WS). Central y Kafka estan en AWS: sus direcciones van en el fichero .env
-#   docker compose up -d --build                         (las 20 estaciones)
-#   docker compose up -d --build monitor-ws01 engine-ws01 monitor-ws02 engine-ws02   (solo algunas)
+#   docker compose build monitor-ws01 engine-ws01        (construir las dos imagenes, una sola vez: con --build en el up,
+#                                                         Docker construiria la misma imagen 20 veces a la vez y falla)
+#   docker compose up -d --no-build                      (las 20 estaciones)
+#   docker compose up -d --no-build monitor-ws01 engine-ws01 monitor-ws02 engine-ws02   (solo algunas)
+#   $env:WM_TRAMAS_ERROR="0.3"; docker compose up -d --no-build monitor-ws01 engine-ws01   (demostracion de NACK en WS-01)
 #   docker compose ps                                    (que esta en marcha)
 #   docker compose logs -f monitor-ws01                  (lo que muestra un Monitor)
 #   docker attach engine-ws01                            (menu de un Engine; salir sin pararlo: Ctrl+P y despues Ctrl+Q)

@@ -2,8 +2,10 @@
 # =========================================================
 # PC DEL LABORATORIO CON LOS OPERARIOS (WM_FO): 20 OPERARIOS QUE LEEN SUS PETICIONES DE UN FICHERO (PRUEBA BASE, SIN INTERACCION)
 # Se lanza desde esta carpeta (WM_FO). Kafka esta en AWS: su direccion va en el fichero .env
-#   docker compose up -d --build                         (los 20 operarios)
-#   docker compose up -d --build fo-op01 fo-op02         (solo algunos)
+#   docker compose build fo-op01                         (construir la imagen, una sola vez: con --build en el up,
+#                                                         Docker construiria la misma imagen 20 veces a la vez y falla)
+#   docker compose up -d --no-build                      (los 20 operarios)
+#   docker compose up -d --no-build fo-op01 fo-op02      (solo algunos)
 #   docker compose logs -f fo-op01                       (lo que ve un operario)
 #   docker compose run --rm fo-menu                      (un operario mas, OP99, con menu por teclado)
 # Cada operario lee peticiones/opXX.txt: una linea ID_ESTACION#DURACION por riego. Al acabar el fichero, su FO se cierra
