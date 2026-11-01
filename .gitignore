@@ -6,6 +6,9 @@ dependency-reduced-pom.xml
 # La base de datos local
 *.db
 
+# Los ficheros de progreso del riego que deja el Engine en las pruebas
+riego-*.txt
+
 # Lo que genera la extensión de Java de VS Code
 .classpath
 .project
