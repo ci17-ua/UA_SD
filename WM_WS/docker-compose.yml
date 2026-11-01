@@ -17,12 +17,15 @@ x-monitor: &monitor
   image: wm-ws-monitor
   environment:
     JAVA_TOOL_OPTIONS: "-Xmx64m -XX:+UseSerialGC"
+    WM_TRAMAS_ERROR: ${WM_TRAMAS_ERROR:-0}     # PROBABILIDAD DE TRAMA CON EL LRC MAL (DEMOSTRACION DE NACK)
+
 
 x-engine: &engine
   build: ./WS_E
   image: wm-ws-engine
   environment:
     JAVA_TOOL_OPTIONS: "-Xmx128m -XX:+UseSerialGC"
+    WM_TRAMAS_ERROR: ${WM_TRAMAS_ERROR:-0}
   volumes:
     - riegos:/data                  # WM_RIEGO_DIR=/data (lo fija el Dockerfile): riego-<ID>.txt de cada Engine
   stdin_open: true                  # el Engine tiene menu: hace falta para docker attach
